@@ -1,47 +1,57 @@
-name: CVE Monitor
+name: CVE Monitor with Teams Alerts
 
 on:
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '0 1 * * *'   # daily at 1 AM UTC
   workflow_dispatch:
 
 jobs:
   scan-and-alert:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install -r requirements.txt
 
-      - name: Run CVE check script
+      - name: Run CVE scan script
         run: python check_cves.py
 
-      - name: Compare new results with previous (example)
+      - name: Compare new CVEs with previous results
         id: compare
         run: |
-          # Example logic:
-          # Extract CVE IDs from new results.json and previous results.json
-          # If difference, output 'new_cve_found=true'
-          # For demo, assume new CVEs found
-          echo "::set-output name=new_cve_found::true"
+          # Try to get previous results.json from previous commit
+          git show HEAD^:results.json > old_results.json || echo '{"results":[]}' > old_results.json
 
-      - name: Send Email Alert
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.office365.com
-          server_port: 587
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          secure: false
-          subject: "[CVE Monitor] New CVEs Found!"
-          to: waikaey.tan@my.panasonic.com
-          from: waikaey.tan@my.panasonic.com
-          body: |
-            New CVEs were found during the latest scan.
-            Please check your dashboard: https://caseytwk.github.io/CVE_Automation/
+          # Extract CVE IDs from new and old results
+          NEW_IDS=$(jq -r '.results[].id' results.json)
+          OLD_IDS=$(jq -r '.results[].id' old_results.json)
+
+          NEW_FOUND=false
+          for id in $NEW_IDS; do
+            if ! echo "$OLD_IDS" | grep -qx "$id"; then
+              echo "Found new CVE: $id"
+              NEW_FOUND=true
+              break
+            fi
+          done
+
+          if [ "$NEW_FOUND" = true ]; then
+            echo "new_cve_found=true" >> $GITHUB_OUTPUT
+          else
+            echo "new_cve_found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Microsoft Teams notification
+        if: steps.compare.outputs.new_cve_found == 'true'
+        run: |
+          curl -H "Content-Type: application/json" -d '{
+            "text": "🚨 New CVEs detected in the latest scan! Please check the dashboard: https://caseytwk.github.io/CVE_Automation/"
+          }' ${{ secrets.TEAMS_WEBHOOK_URL }}
