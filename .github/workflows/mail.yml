@@ -38,7 +38,7 @@ jobs:
           server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          secure: true
+          secure: false
           subject: "[CVE Monitor] New CVEs Found!"
           to: waikaey.tan@my.panasonic.com
           from: waikaey.tan@my.panasonic.com
