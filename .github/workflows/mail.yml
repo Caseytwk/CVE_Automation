@@ -1,0 +1,47 @@
+name: CVE Monitor
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  scan-and-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run CVE check script
+        run: python check_cves.py
+
+      - name: Compare new results with previous (example)
+        id: compare
+        run: |
+          # Example logic:
+          # Extract CVE IDs from new results.json and previous results.json
+          # If difference, output 'new_cve_found=true'
+          # For demo, assume new CVEs found
+          echo "::set-output name=new_cve_found::true"
+
+      - name: Send Email Alert
+        if: steps.compare.outputs.new_cve_found == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "[CVE Monitor] New CVEs Found!"
+          to: waikaey.tan@my.panasonic.com
+          from: waikaey.tan@my.panasonic.com
+          body: |
+            New CVEs were found during the latest scan.
+            Please check your dashboard: https://caseytwk.github.io/CVE_Automation/
