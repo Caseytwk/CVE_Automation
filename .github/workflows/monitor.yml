@@ -2,8 +2,8 @@ name: CVE Monitor
 
 on:
   schedule:
-    - cron: '0 1 * * *'
-  workflow_dispatch:
+    - cron: '0 1 * * *'   # Daily at 1AM UTC
+  workflow_dispatch:       # <-- THIS enables the "Run workflow" button
 
 jobs:
   scan-and-deploy:
