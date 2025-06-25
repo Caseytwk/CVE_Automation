@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head><title>CVE Dashboard</title></head>
+<body>
+  <h1>Latest CVEs</h1>
+  <pre id="data">Loading...</pre>
+  <script>
+    fetch('results.json')
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('data').textContent = JSON.stringify(data, null, 2);
+      });
+  </script>
+</body>
+</html>
