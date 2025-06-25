@@ -24,13 +24,13 @@ jobs:
       - name: Compare new CVEs with previous results
         id: compare
         run: |
-          # Try to get previous results.json from previous commit
-          git show HEAD^:results.json > old_results.json || echo '{"results":[]}' > old_results.json
-
-          # Extract CVE IDs from new and old results
-          NEW_IDS=$(jq -r '.results[].id' results.json)
+          # Get previous version of the file from last commit
+          git show HEAD^:output/results.json > old_results.json || echo '{"results":[]}' > old_results.json
+      
+          # Use correct path to current results
+          NEW_IDS=$(jq -r '.results[].id' output/results.json)
           OLD_IDS=$(jq -r '.results[].id' old_results.json)
-
+      
           NEW_FOUND=false
           for id in $NEW_IDS; do
             if ! echo "$OLD_IDS" | grep -qx "$id"; then
@@ -39,7 +39,7 @@ jobs:
               break
             fi
           done
-
+      
           if [ "$NEW_FOUND" = true ]; then
             echo "new_cve_found=true" >> $GITHUB_OUTPUT
           else
