@@ -32,13 +32,13 @@ jobs:
           echo "::set-output name=new_cve_found::true"
 
       - name: Send Email Alert
-        if: steps.compare.outputs.new_cve_found == 'true'
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: smtp.gmail.com
-          server_port: 465
+          server_address: smtp.office365.com
+          server_port: 587
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
+          secure: true
           subject: "[CVE Monitor] New CVEs Found!"
           to: waikaey.tan@my.panasonic.com
           from: waikaey.tan@my.panasonic.com
