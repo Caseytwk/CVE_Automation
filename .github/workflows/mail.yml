@@ -1,44 +1,28 @@
-name: CVE Monitor with Teams Alerts
+name: CVE Alert via Teams
 
 on:
-  schedule:
-    - cron: '0 17 * * *'  # 1AM MYT (UTC+8)
-  workflow_dispatch:
+  push:
+    paths:
+      - 'output/results.json'
 
 jobs:
-  scan:
+  alert:
     runs-on: ubuntu-latest
-    outputs:
-      new_cve_found: ${{ steps.compare.outputs.new_cve_found }}
 
     steps:
       - uses: actions/checkout@v3
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
+      - run: pip install jq
 
-      - name: Install dependencies
-        run: python -m pip install requests jq
-
-      - name: Run CVE scan script
-        run: python check_cves.py
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./output
-
-      - name: Compare new CVEs with previous results
+      - name: Compare with previous commit
         id: compare
         run: |
-          # Check for previous commit
           if git rev-parse HEAD^ &>/dev/null; then
             git show HEAD^:output/results.json > old_results.json
           else
-            echo "First run: No previous commit"
             echo '{"results":[]}' > old_results.json
           fi
 
@@ -54,15 +38,14 @@ jobs:
           done
 
           if [ -n "$NEW_CVES" ]; then
-            echo "new_cve_found=true" >> $GITHUB_OUTPUT
             echo "$NEW_CVES" > new_ids.txt
+            echo "true" > trigger_alert.txt
           else
-            echo "new_cve_found=false" >> $GITHUB_OUTPUT
-            touch new_ids.txt
+            echo "false" > trigger_alert.txt
           fi
 
-      - name: Format Teams alert message
-        if: steps.compare.outputs.new_cve_found == 'true'
+      - name: Format and send Teams alert
+        if: ${{ success() && steps.compare.outputs.trigger_alert != 'false' }}
         run: |
           MESSAGE="🚨 *New CVEs detected!*<br><br>"
           for id in $(cat new_ids.txt); do
@@ -74,29 +57,8 @@ jobs:
             MESSAGE+="<b>$id</b> ($severity)<br>$title<br><a href=\"$ref\">$ref</a><br><br>"
           done
           MESSAGE+="👉 <a href='https://caseytwk.github.io/CVE_Automation/'>View full dashboard</a>"
-          echo "$MESSAGE" > alert_body.txt
 
-      - name: Save alert message for next job
-        if: steps.compare.outputs.new_cve_found == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: alert-message
-          path: alert_body.txt
-
-  alert:
-    needs: scan
-    if: needs.scan.outputs.new_cve_found == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download alert message
-        uses: actions/download-artifact@v4
-        with:
-          name: alert-message
-
-      - name: Send Microsoft Teams alert
-        run: |
-          TEXT=$(cat alert_body.txt | jq -Rs .)
+          TEXT=$(echo "$MESSAGE" | jq -Rs .)
           curl -H "Content-Type: application/json" \
                -d "{\"text\": $TEXT}" \
                ${{ secrets.TEAMS_WEBHOOK_URL }}
