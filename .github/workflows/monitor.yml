@@ -20,9 +20,13 @@ jobs:
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
+      
+          # Ensure we're on a real branch
+          git checkout -B main
+      
           git add output/results.json
           git commit -m "Update CVE scan results" || echo "No changes"
-          git push origin HEAD:main || echo "No changes to push"
+          git push origin main
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
