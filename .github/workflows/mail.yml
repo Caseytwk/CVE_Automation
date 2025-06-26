@@ -38,7 +38,7 @@ jobs:
           git show HEAD^:output/results.json > old_results.json || echo '{"results":[]}' > old_results.json
           NEW_IDS=$(jq -r '.results[].id' output/results.json)
           OLD_IDS=$(jq -r '.results[].id' old_results.json)
-
+      
           NEW_CVES=""
           for id in $NEW_IDS; do
             if ! echo "$OLD_IDS" | grep -qx "$id"; then
@@ -46,12 +46,13 @@ jobs:
               NEW_CVES="$NEW_CVES $id"
             fi
           done
-
+      
           if [ -n "$NEW_CVES" ]; then
-            echo "new_cve_found=true" >> $GITHUB_OUTPUT
+            echo "new_cve_found=true" >> "$GITHUB_OUTPUT"
             echo "$NEW_CVES" > new_ids.txt
           else
-            echo "new_cve_found=false" >> $GITHUB_OUTPUT
+            echo "new_cve_found=false" >> "$GITHUB_OUTPUT"
+            touch new_ids.txt  
           fi
 
       - name: Format Teams alert message
