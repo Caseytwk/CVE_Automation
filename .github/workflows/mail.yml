@@ -2,15 +2,14 @@ name: CVE Monitor with Teams Alerts
 
 on:
   schedule:
-    - cron: '0 17 * * *'  # 1 AM MYT (UTC+8)
+    - cron: '0 17 * * *'  # 1AM MYT (UTC+8)
   workflow_dispatch:
 
 jobs:
-
   scan:
     runs-on: ubuntu-latest
     outputs:
-      new_cve: ${{ steps.compare.outputs.new_cve_found }}
+      new_cve_found: ${{ steps.compare.outputs.new_cve_found }}
 
     steps:
       - uses: actions/checkout@v3
@@ -35,16 +34,17 @@ jobs:
       - name: Compare new CVEs with previous results
         id: compare
         run: |
+          # Check for previous commit
           if git rev-parse HEAD^ &>/dev/null; then
             git show HEAD^:output/results.json > old_results.json
           else
-            echo "First run or no previous results — using empty baseline"
+            echo "First run: No previous commit"
             echo '{"results":[]}' > old_results.json
           fi
-      
+
           NEW_IDS=$(jq -r '.results[].id' output/results.json)
           OLD_IDS=$(jq -r '.results[].id' old_results.json)
-      
+
           NEW_CVES=""
           for id in $NEW_IDS; do
             if ! echo "$OLD_IDS" | grep -qx "$id"; then
@@ -52,15 +52,14 @@ jobs:
               NEW_CVES="$NEW_CVES $id"
             fi
           done
-      
+
           if [ -n "$NEW_CVES" ]; then
-            echo "new_cve_found=true" >> "$GITHUB_OUTPUT"
+            echo "new_cve_found=true" >> $GITHUB_OUTPUT
             echo "$NEW_CVES" > new_ids.txt
           else
-            echo "new_cve_found=false" >> "$GITHUB_OUTPUT"
+            echo "new_cve_found=false" >> $GITHUB_OUTPUT
             touch new_ids.txt
           fi
-
 
       - name: Format Teams alert message
         if: steps.compare.outputs.new_cve_found == 'true'
@@ -77,7 +76,7 @@ jobs:
           MESSAGE+="👉 <a href='https://caseytwk.github.io/CVE_Automation/'>View full dashboard</a>"
           echo "$MESSAGE" > alert_body.txt
 
-      - name: Upload alert message
+      - name: Save alert message for next job
         if: steps.compare.outputs.new_cve_found == 'true'
         uses: actions/upload-artifact@v4
         with:
@@ -86,7 +85,7 @@ jobs:
 
   alert:
     needs: scan
-    if: needs.scan.outputs.new_cve == 'true'
+    if: needs.scan.outputs.new_cve_found == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -101,4 +100,3 @@ jobs:
           curl -H "Content-Type: application/json" \
                -d "{\"text\": $TEXT}" \
                ${{ secrets.TEAMS_WEBHOOK_URL }}
-
