@@ -58,13 +58,15 @@ jobs:
             entry=$(jq -r --arg id "$id" '.results[] | select(.id==$id)' output/results.json)
             title=$(echo "$entry" | jq -r '.title // .description')
             severity=$(echo "$entry" | jq -r '.severity')
-            ref=$(echo "$entry" | jq -r '.reference // empty')
-            MESSAGE+="*[$id]* ($severity)\n$title\n${ref}\n\n"
+            ref=$(echo "$entry" | jq -r '.reference // "N/A"')
+            MESSAGE+="*[$id]* ($severity)<br>$title<br><a href=\"$ref\">$ref</a><br><br>"
           done
-          MESSAGE+="👉 View full dashboard: https://caseytwk.github.io/CVE_Automation/"
-          echo "alert_body<<EOF" >> $GITHUB_OUTPUT
-          echo "$MESSAGE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          MESSAGE+="👉 <a href=\"https://caseytwk.github.io/CVE_Automation/\">View full dashboard</a>"
+      
+          # Escape for JSON and output properly
+          ESCAPED=$(echo "$MESSAGE" | jq -Rs .)
+          echo "alert_body=$ESCAPED" >> $GITHUB_OUTPUT
+
 
   alert:
     needs: scan
@@ -74,4 +76,4 @@ jobs:
     steps:
       - name: Send Microsoft Teams alert
         run: |
-          curl -H "Content-Type: application/json" -d "$(jq -n --arg text "${{ needs.scan.outputs.alert_body }}" '{text: $text}')" ${{ secrets.TEAMS_WEBHOOK_URL }}
+          curl -H "Content-Type: application/json" -d "{ \"text\": ${{ needs.scan.outputs.alert_body }} }" ${{ secrets.TEAMS_WEBHOOK_URL }}
