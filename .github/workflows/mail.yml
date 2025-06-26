@@ -35,7 +35,13 @@ jobs:
       - name: Compare new CVEs with previous results
         id: compare
         run: |
-          git show HEAD^:output/results.json > old_results.json || echo '{"results":[]}' > old_results.json
+          if git rev-parse HEAD^ &>/dev/null; then
+            git show HEAD^:output/results.json > old_results.json
+          else
+            echo "First run or no previous results — using empty baseline"
+            echo '{"results":[]}' > old_results.json
+          fi
+      
           NEW_IDS=$(jq -r '.results[].id' output/results.json)
           OLD_IDS=$(jq -r '.results[].id' old_results.json)
       
@@ -52,8 +58,9 @@ jobs:
             echo "$NEW_CVES" > new_ids.txt
           else
             echo "new_cve_found=false" >> "$GITHUB_OUTPUT"
-            touch new_ids.txt  
+            touch new_ids.txt
           fi
+
 
       - name: Format Teams alert message
         if: steps.compare.outputs.new_cve_found == 'true'
