@@ -1,0 +1,14 @@
+name: Alert Trigger Test
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'output/results.json'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "✅ Alert triggered successfully!"
