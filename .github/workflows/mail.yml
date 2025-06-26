@@ -2,6 +2,8 @@ name: CVE Alert via Teams
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'output/results.json'
 
