@@ -89,7 +89,8 @@ jobs:
 
       - name: Send Microsoft Teams alert
         run: |
-          TEXT=$(cat alert_body.txt)
+          TEXT=$(cat alert_body.txt | jq -Rs .)
           curl -H "Content-Type: application/json" \
-               -d "{\"text\": \"$TEXT\"}" \
+               -d "{\"text\": $TEXT}" \
                ${{ secrets.TEAMS_WEBHOOK_URL }}
+
