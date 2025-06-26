@@ -2,8 +2,8 @@ name: CVE Monitor
 
 on:
   schedule:
-    - cron: '0 17 * * *'   # Daily at 1AM UTC
-  workflow_dispatch:      
+    - cron: '0 17 * * *'  # 1AM MYT
+  workflow_dispatch:
 
 jobs:
   scan-and-deploy:
@@ -14,8 +14,15 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
-      - run: pip install requests
+      - run: pip install requests jq
       - run: python check_cves.py
+      - name: Commit updated results
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add output/results.json
+          git commit -m "Update CVE scan results" || echo "No changes"
+          git push
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
