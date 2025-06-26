@@ -26,6 +26,12 @@ jobs:
       - name: Run CVE scan script
         run: python check_cves.py
 
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
+
       - name: Compare new CVEs with previous results
         id: compare
         run: |
