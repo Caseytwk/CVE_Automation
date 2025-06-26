@@ -5,7 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'output/results.json'
+      - 'output/**'
+  schedule:
+    - cron: '0 17 * * *'  # 1 AM MYT
+  workflow_dispatch:
 
 jobs:
   alert:
