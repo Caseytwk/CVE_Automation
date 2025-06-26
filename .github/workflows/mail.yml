@@ -53,19 +53,19 @@ jobs:
         if: steps.compare.outputs.new_cve_found == 'true'
         id: format
         run: |
-          MESSAGE="🚨 *New CVEs detected!*\n\n"
+          MESSAGE="🚨 *New CVEs detected!*<br><br>"
           for id in $(cat new_ids.txt); do
             entry=$(jq -r --arg id "$id" '.results[] | select(.id==$id)' output/results.json)
             title=$(echo "$entry" | jq -r '.title // .description')
             severity=$(echo "$entry" | jq -r '.severity')
-            ref=$(echo "$entry" | jq -r '.reference // "N/A"')
-            MESSAGE+="*[$id]* ($severity)<br>$title<br><a href=\"$ref\">$ref</a><br><br>"
+            ref=$(echo "$entry" | jq -r '.reference // "https://nvd.nist.gov/vuln/detail/" + .id')
+            MESSAGE+="<b>$id</b> ($severity)<br>$title<br><a href=\"$ref\">$ref</a><br><br>"
           done
-          MESSAGE+="👉 <a href=\"https://caseytwk.github.io/CVE_Automation/\">View full dashboard</a>"
+          MESSAGE+="👉 <a href='https://caseytwk.github.io/CVE_Automation/'>View full dashboard</a>"
       
-          # Escape for JSON and output properly
-          ESCAPED=$(echo "$MESSAGE" | jq -Rs .)
-          echo "alert_body=$ESCAPED" >> $GITHUB_OUTPUT
+          # Save escaped message to a file for next job
+          echo "$MESSAGE" > alert_body.txt
+
 
 
   alert:
