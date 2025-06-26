@@ -2,12 +2,9 @@ name: CVE Alert via Teams
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - 'output/results.json'
-  schedule:
-    - cron: '0 17 * * *'  # 1 AM MYT (UTC+8)
   workflow_dispatch:
 
 jobs:
@@ -15,56 +12,62 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Set up Python & JQ
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-      - run: pip install jq
+      - name: Install JQ
+        run: sudo apt-get install -y jq
 
-      - name: Compare with previous commit
-        id: compare
+      - name: Fetch previous results
+        id: diff
         run: |
-          mkdir -p temp
+          mkdir -p tmp
 
-          # Handle first run where no previous commit may exist
-          if git rev-parse HEAD^ &>/dev/null && git show HEAD^:output/results.json > temp/old_results.json 2>/dev/null; then
-            echo "✅ Found previous results"
+          # Try to get previous commit’s results.json
+          if git show HEAD^:output/results.json > tmp/old.json 2>/dev/null; then
+            echo "✅ Got previous results"
           else
-            echo '{"results":[]}' > temp/old_results.json
-            echo "🟡 No previous results, assuming empty"
+            echo '{"results":[]}' > tmp/old.json
+            echo "🟡 No previous results found"
           fi
 
-          # Extract IDs
-          jq -r '.results[].id' output/results.json > temp/new_ids.txt
-          jq -r '.results[].id' temp/old_results.json > temp/old_ids.txt
+          jq -r '.results[].id' output/results.json | sort > tmp/new_ids.txt
+          jq -r '.results[].id' tmp/old.json | sort > tmp/old_ids.txt
 
-          # Find new CVE IDs only
-          comm -23 <(sort temp/new_ids.txt) <(sort temp/old_ids.txt) > temp/new_only_ids.txt
+          # Show debug diff
+          echo "🔍 Comparing CVE IDs..."
+          echo "--- New IDs:"
+          cat tmp/new_ids.txt
+          echo "--- Old IDs:"
+          cat tmp/old_ids.txt
 
-          if [ -s temp/new_only_ids.txt ]; then
-            echo "trigger_alert=true" >> $GITHUB_OUTPUT
+          # Find newly added CVEs
+          comm -23 tmp/new_ids.txt tmp/old_ids.txt > tmp/diff_ids.txt
+
+          if [[ -s tmp/diff_ids.txt ]]; then
+            echo "✅ New CVEs found:"
+            cat tmp/diff_ids.txt
+            echo "alert=true" >> $GITHUB_OUTPUT
           else
-            echo "trigger_alert=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No new CVEs"
+            echo "alert=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Format and send Teams alert
-        if: steps.compare.outputs.trigger_alert == 'true'
+      - name: Format and Send Teams Message
+        if: steps.diff.outputs.alert == 'true'
         run: |
-          MESSAGE="🚨 *New CVEs detected!*<br><br>"
-
-          for id in $(cat temp/new_only_ids.txt); do
+          MESSAGE="🚨 <b>New CVEs detected!</b><br><br>"
+          for id in $(cat tmp/diff_ids.txt); do
             entry=$(jq -r --arg id "$id" '.results[] | select(.id == $id)' output/results.json)
             title=$(echo "$entry" | jq -r '.title // .description')
             severity=$(echo "$entry" | jq -r '.severity // "UNKNOWN"')
             ref=$(echo "$entry" | jq -r '.reference // empty')
-            [ -z "$ref" ] && ref="https://nvd.nist.gov/vuln/detail/$id"
-
+            [[ "$ref" == "empty" ]] && ref="https://nvd.nist.gov/vuln/detail/$id"
             MESSAGE+="<b>$id</b> ($severity)<br>$title<br><a href=\"$ref\">$ref</a><br><br>"
           done
-
           MESSAGE+="👉 <a href='https://caseytwk.github.io/CVE_Automation/'>View full dashboard</a>"
+
+          echo "🚀 Sending Teams Alert:"
+          echo "$MESSAGE"
 
           TEXT=$(echo "$MESSAGE" | jq -Rs .)
           curl -H "Content-Type: application/json" \
