@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new_cve: ${{ steps.compare.outputs.new_cve_found }}
-      alert_body: ${{ steps.format.outputs.alert_body }}
 
     steps:
       - uses: actions/checkout@v3
@@ -26,11 +25,6 @@ jobs:
 
       - name: Run CVE scan script
         run: python check_cves.py
-
-      - name: Download alert message
-        uses: actions/download-artifact@v3
-        with:
-          name: alert-message
 
       - name: Compare new CVEs with previous results
         id: compare
@@ -56,31 +50,39 @@ jobs:
 
       - name: Format Teams alert message
         if: steps.compare.outputs.new_cve_found == 'true'
-        id: format
         run: |
           MESSAGE="🚨 *New CVEs detected!*<br><br>"
           for id in $(cat new_ids.txt); do
             entry=$(jq -r --arg id "$id" '.results[] | select(.id==$id)' output/results.json)
             title=$(echo "$entry" | jq -r '.title // .description')
             severity=$(echo "$entry" | jq -r '.severity')
-            ref=$(echo "$entry" | jq -r '.reference // "https://nvd.nist.gov/vuln/detail/" + .id')
+            ref=$(echo "$entry" | jq -r '.reference // empty')
+            [ -z "$ref" ] && ref="https://nvd.nist.gov/vuln/detail/$id"
             MESSAGE+="<b>$id</b> ($severity)<br>$title<br><a href=\"$ref\">$ref</a><br><br>"
           done
           MESSAGE+="👉 <a href='https://caseytwk.github.io/CVE_Automation/'>View full dashboard</a>"
-      
-          # Save escaped message to a file for next job
           echo "$MESSAGE" > alert_body.txt
 
-
+      - name: Upload alert message
+        if: steps.compare.outputs.new_cve_found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: alert-message
+          path: alert_body.txt
 
   alert:
     needs: scan
-    runs-on: ubuntu-latest
     if: needs.scan.outputs.new_cve == 'true'
+    runs-on: ubuntu-latest
 
     steps:
-     - name: Send Microsoft Teams alert
-       run: |
+      - name: Download alert message
+        uses: actions/download-artifact@v4
+        with:
+          name: alert-message
+
+      - name: Send Microsoft Teams alert
+        run: |
           TEXT=$(cat alert_body.txt)
           curl -H "Content-Type: application/json" \
                -d "{\"text\": \"$TEXT\"}" \
