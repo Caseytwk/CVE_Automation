@@ -16,12 +16,6 @@ jobs:
           python-version: '3.x'
       - run: pip install requests
       - run: python check_cves.py
-      - name: Upload alert message
-        if: steps.compare.outputs.new_cve_found == 'true'
-        uses: actions/upload-artifact@v3
-        with:
-          name: alert-message
-          path: alert_body.txt
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
