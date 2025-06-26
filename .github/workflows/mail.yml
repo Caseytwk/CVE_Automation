@@ -74,6 +74,9 @@ jobs:
     if: needs.scan.outputs.new_cve == 'true'
 
     steps:
-      - name: Send Microsoft Teams alert
-        run: |
-          curl -H "Content-Type: application/json" -d "{ \"text\": ${{ needs.scan.outputs.alert_body }} }" ${{ secrets.TEAMS_WEBHOOK_URL }}
+     - name: Send Microsoft Teams alert
+       run: |
+          TEXT=$(cat alert_body.txt)
+          curl -H "Content-Type: application/json" \
+               -d "{\"text\": \"$TEXT\"}" \
+               ${{ secrets.TEAMS_WEBHOOK_URL }}
