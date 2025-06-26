@@ -2,7 +2,7 @@ name: CVE Monitor
 
 on:
   schedule:
-    - cron: '0 1 * * *'   # Daily at 1AM UTC
+    - cron: '0 17 * * *'   # Daily at 1AM UTC
   workflow_dispatch:      
 
 jobs:
