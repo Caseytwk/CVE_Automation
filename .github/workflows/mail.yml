@@ -27,6 +27,11 @@ jobs:
       - name: Run CVE scan script
         run: python check_cves.py
 
+      - name: Download alert message
+        uses: actions/download-artifact@v3
+        with:
+          name: alert-message
+
       - name: Compare new CVEs with previous results
         id: compare
         run: |
