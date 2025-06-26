@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'output/**'
+      - 'output/results.json'
   schedule:
     - cron: '0 17 * * *'  # 1 AM MYT (UTC+8)
   workflow_dispatch:
@@ -17,35 +17,33 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python
+      - name: Set up Python & JQ
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
-
       - run: pip install jq
 
       - name: Compare with previous commit
         id: compare
         run: |
-          if git rev-parse HEAD^ &>/dev/null; then
-            git show HEAD^:output/results.json > old_results.json
+          mkdir -p temp
+
+          # Handle first run where no previous commit may exist
+          if git rev-parse HEAD^ &>/dev/null && git show HEAD^:output/results.json > temp/old_results.json 2>/dev/null; then
+            echo "✅ Found previous results"
           else
-            echo '{"results":[]}' > old_results.json
+            echo '{"results":[]}' > temp/old_results.json
+            echo "🟡 No previous results, assuming empty"
           fi
 
-          NEW_IDS=$(jq -r '.results[].id' output/results.json)
-          OLD_IDS=$(jq -r '.results[].id' old_results.json)
+          # Extract IDs
+          jq -r '.results[].id' output/results.json > temp/new_ids.txt
+          jq -r '.results[].id' temp/old_results.json > temp/old_ids.txt
 
-          NEW_CVES=""
-          for id in $NEW_IDS; do
-            if ! echo "$OLD_IDS" | grep -qx "$id"; then
-              echo "Found new CVE: $id"
-              NEW_CVES="$NEW_CVES $id"
-            fi
-          done
+          # Find new CVE IDs only
+          comm -23 <(sort temp/new_ids.txt) <(sort temp/old_ids.txt) > temp/new_only_ids.txt
 
-          if [ -n "$NEW_CVES" ]; then
-            echo "$NEW_CVES" > new_ids.txt
+          if [ -s temp/new_only_ids.txt ]; then
             echo "trigger_alert=true" >> $GITHUB_OUTPUT
           else
             echo "trigger_alert=false" >> $GITHUB_OUTPUT
@@ -55,14 +53,17 @@ jobs:
         if: steps.compare.outputs.trigger_alert == 'true'
         run: |
           MESSAGE="🚨 *New CVEs detected!*<br><br>"
-          for id in $(cat new_ids.txt); do
-            entry=$(jq -r --arg id "$id" '.results[] | select(.id==$id)' output/results.json)
+
+          for id in $(cat temp/new_only_ids.txt); do
+            entry=$(jq -r --arg id "$id" '.results[] | select(.id == $id)' output/results.json)
             title=$(echo "$entry" | jq -r '.title // .description')
-            severity=$(echo "$entry" | jq -r '.severity')
+            severity=$(echo "$entry" | jq -r '.severity // "UNKNOWN"')
             ref=$(echo "$entry" | jq -r '.reference // empty')
             [ -z "$ref" ] && ref="https://nvd.nist.gov/vuln/detail/$id"
+
             MESSAGE+="<b>$id</b> ($severity)<br>$title<br><a href=\"$ref\">$ref</a><br><br>"
           done
+
           MESSAGE+="👉 <a href='https://caseytwk.github.io/CVE_Automation/'>View full dashboard</a>"
 
           TEXT=$(echo "$MESSAGE" | jq -Rs .)
