@@ -25,13 +25,15 @@ jobs:
 
       - name: Get previous results.json from main
         run: |
-          mkdir old && cd old
+          mkdir old
+          cd old
           git init
           git remote add origin https://github.com/${{ github.repository }}
           git fetch origin main
           git checkout origin/main
           cp output/results.json ../old_results.json || echo '{"results":[]}' > ../old_results.json
           cd ..
+
 
       - name: Compare with new results
         id: compare
