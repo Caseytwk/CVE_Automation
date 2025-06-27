@@ -6,52 +6,66 @@ on:
       - 'output/results.json'
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   alert:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
       - name: Install jq
-        run: sudo apt-get install -y jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Compare results
-        id: diff
+      - name: Get previous results.json from main
         run: |
-          mkdir -p tmp
-          if git rev-parse HEAD^ &>/dev/null && git show HEAD^:output/results.json > tmp/old.json 2>/dev/null; then
-            echo "✅ Got previous results"
+          mkdir old && cd old
+          git init
+          git remote add origin https://github.com/${{ github.repository }}
+          git fetch origin main
+          git checkout origin/main
+          cp output/results.json ../old_results.json || echo '{"results":[]}' > ../old_results.json
+          cd ..
+
+      - name: Compare with new results
+        id: compare
+        run: |
+          NEW_IDS=$(jq -r '.results[].id' output/results.json)
+          OLD_IDS=$(jq -r '.results[].id' old_results.json)
+
+          NEW_CVES=""
+          for id in $NEW_IDS; do
+            if ! echo "$OLD_IDS" | grep -qx "$id"; then
+              echo "Found new CVE: $id"
+              NEW_CVES="$NEW_CVES $id"
+            fi
+          done
+
+          if [ -n "$NEW_CVES" ]; then
+            echo "$NEW_CVES" > new_ids.txt
+            echo "trigger_alert=true" >> $GITHUB_OUTPUT
           else
-            echo '{"results":[]}' > tmp/old.json
-            echo "⚠️ No previous results"
+            echo "trigger_alert=false" >> $GITHUB_OUTPUT
           fi
 
-          jq -r '.results[].id' output/results.json | sort > tmp/new.txt
-          jq -r '.results[].id' tmp/old.json | sort > tmp/old.txt
-          comm -23 tmp/new.txt tmp/old.txt > tmp/diff.txt
-
-          if [[ -s tmp/diff.txt ]]; then
-            echo "alert=true" >> $GITHUB_OUTPUT
-          else
-            echo "alert=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Send Teams alert
-        if: steps.diff.outputs.alert == 'true'
+      - name: Format and send Teams alert
+        if: steps.compare.outputs.trigger_alert == 'true'
         run: |
-          MESSAGE="🚨 <b>New CVEs detected!</b><br><br>"
-
-          for id in $(cat tmp/diff.txt); do
+          MESSAGE="🚨 *New CVEs detected!*<br><br>"
+          for id in $(cat new_ids.txt); do
             entry=$(jq -r --arg id "$id" '.results[] | select(.id==$id)' output/results.json)
             title=$(echo "$entry" | jq -r '.title // .description')
             severity=$(echo "$entry" | jq -r '.severity')
             ref=$(echo "$entry" | jq -r '.reference // empty')
-            [ "$ref" = "empty" ] && ref="https://nvd.nist.gov/vuln/detail/$id"
+            [ -z "$ref" ] && ref="https://nvd.nist.gov/vuln/detail/$id"
             MESSAGE+="<b>$id</b> ($severity)<br>$title<br><a href=\"$ref\">$ref</a><br><br>"
           done
-
           MESSAGE+="👉 <a href='https://caseytwk.github.io/CVE_Automation/'>View full dashboard</a>"
 
           TEXT=$(echo "$MESSAGE" | jq -Rs .)
