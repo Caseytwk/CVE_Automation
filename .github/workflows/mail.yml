@@ -3,7 +3,7 @@ name: CVE Alert
 on:
   push:
     paths:
-      - 'output/results.json'
+      - 'output/**'
     branches:
       - main
 
@@ -14,7 +14,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
-          fetch-depth: 2  # ⬅️ Needed to compare current and previous commit
+          fetch-depth: 2  
 
       - name: Ensure jq is available
         run: sudo apt-get install -y jq
