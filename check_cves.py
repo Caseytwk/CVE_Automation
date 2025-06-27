@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 KEYWORDS = [
     {"sdk": "RTL8720CM", "search": "RTL8720CM"},
     {"sdk": "Ameba SDK", "search": "Ameba"},
-    {"sdk": "RTL8762EKF", "search": "RTL8762EKF"},
+    #{"sdk": "RTL8762EKF", "search": "RTL8762EKF"},
 ]
 
 headers = {"User-Agent": "cve-monitor/1.0"}
