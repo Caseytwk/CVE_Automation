@@ -264,28 +264,6 @@
       "cwe": "CWE-120",
       "published": "2019-10-17T02:15:13.477",
       "reference": "http://lists.opensuse.org/opensuse-security-announce/2019-10/msg00064.html"
-    },
-    {
-      "sdk": "RTL",
-      "id": "CVE-2019-18624",
-      "title": "",
-      "description": "Opera Mini for Android allows attackers to bypass intended restrictions on .apk file download/installation via an RTLO (aka Right to Left Override) approach, as demonstrated by misinterpretation of malicious%E2%80%AEtxt.apk as maliciouskpa.txt. This affects 44.1.2254.142553, 44.1.2254.142659, and 44.1.2254.143214.",
-      "severity": "CRITICAL",
-      "cvss": 9.8,
-      "cwe": "NVD-CWE-noinfo",
-      "published": "2019-10-29T19:15:20.000",
-      "reference": "http://firstsight.me/2019/10/illegal-rendered-at-download-feature-in-several-apps-including-opera-mini-that-lead-to-extension-manipulation-with-rtlo/"
-    },
-    {
-      "sdk": "RTL",
-      "id": "CVE-2019-19063",
-      "title": "",
-      "description": "Two memory leaks in the rtl_usb_probe() function in drivers/net/wireless/realtek/rtlwifi/usb.c in the Linux kernel through 5.3.11 allow attackers to cause a denial of service (memory consumption), aka CID-3f9361695113.",
-      "severity": "MEDIUM",
-      "cvss": 4.6,
-      "cwe": "CWE-401",
-      "published": "2019-11-18T06:15:12.547",
-      "reference": "http://lists.opensuse.org/opensuse-security-announce/2019-12/msg00029.html"
     }
   ]
 }
