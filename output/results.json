@@ -157,17 +157,6 @@
     },
     {
       "sdk": "RTL",
-      "id": "CVE-2014-3808",
-      "title": "",
-      "description": "Multiple cross-site scripting (XSS) vulnerabilities in BarracudaDrive before 6.7.2 allow remote attackers to inject arbitrary web script or HTML via the (1) role parameter to roles.lsp, (2) name parameter to user.lsp, (3) path parameter to wizard/setuser.lsp, (4) host parameter to tunnelconstr.lsp, or (5) newpath parameter to wfsconstr.lsp in rtl/protected/admin/.",
-      "severity": "UNKNOWN",
-      "cvss": "N/A",
-      "cwe": "CWE-79",
-      "published": "2014-05-21T14:55:06.757",
-      "reference": "http://secpod.org/advisories/SecPod_Advistory_BarracudaDrive_6.7.1_Mult_XSS_Vuln.txt"
-    },
-    {
-      "sdk": "RTL",
       "id": "CVE-2014-4335",
       "title": "",
       "description": "Multiple cross-site scripting (XSS) vulnerabilities in BarracudaDrive 6.7.2 allow remote attackers to inject arbitrary web script or HTML via the (1) host or (2) password parameter to rtl/protected/admin/ddns/.",
