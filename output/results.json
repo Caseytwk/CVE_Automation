@@ -66,6 +66,17 @@
       "cwe": "NVD-CWE-noinfo",
       "published": "2022-09-27T23:15:13.977",
       "reference": "https://www.amebaiot.com/en/security_bulletin/cve-2022-34326/"
+    },
+    {
+      "sdk": "RTL",
+      "id": "CVE-2006-2334",
+      "title": "",
+      "description": "The RtlDosPathNameToNtPathName_U API function in NTDLL.DLL in Microsoft Windows 2000 SP4 and XP SP2 does not properly convert DOS style paths with trailing spaces into NT style paths, which allows context-dependent attackers to create files that cannot be accessed through the expected DOS path or prevent access to other similarly named files in the same directory, which prevents those files from being detected or disinfected by certain anti-virus and anti-spyware software.",
+      "severity": "UNKNOWN",
+      "cvss": "N/A",
+      "cwe": "NVD-CWE-Other",
+      "published": "2006-05-12T00:02:00.000",
+      "reference": "http://www.48bits.com/advisories/rtldospath.pdf"
     }
   ]
 }
