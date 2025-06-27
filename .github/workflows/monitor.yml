@@ -9,24 +9,25 @@ jobs:
   scan-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+
       - run: pip install requests jq
       - run: python check_cves.py
+
       - name: Commit updated results
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-      
-          # Ensure we're on a real branch
-          git checkout -B main
-      
+          git checkout main
+          git pull
           git add output/results.json
-          git commit -m "Update CVE scan results" || echo "No changes"
-          git push origin main
+          git diff --cached --quiet || git commit -m "Update CVE scan results"
+          git push
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
