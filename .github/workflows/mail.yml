@@ -2,11 +2,10 @@ name: CVE Alert via Teams
 
 on:
   push:
-    branches:
-      - main
     paths:
       - 'output/results.json'
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
   alert:
@@ -15,15 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install jq
         run: sudo apt-get install -y jq
 
-      - name: Generate old and new CVE lists
+      - name: Compare results
         id: diff
         run: |
           mkdir -p tmp
-
-          # Get old results from previous commit (gracefully fallback)
           if git rev-parse HEAD^ &>/dev/null && git show HEAD^:output/results.json > tmp/old.json 2>/dev/null; then
             echo "✅ Got previous results"
           else
@@ -31,38 +28,33 @@ jobs:
             echo "⚠️ No previous results"
           fi
 
-          jq -r '.results[].id' output/results.json | sort > tmp/new_ids.txt
-          jq -r '.results[].id' tmp/old.json | sort > tmp/old_ids.txt
+          jq -r '.results[].id' output/results.json | sort > tmp/new.txt
+          jq -r '.results[].id' tmp/old.json | sort > tmp/old.txt
+          comm -23 tmp/new.txt tmp/old.txt > tmp/diff.txt
 
-          comm -23 tmp/new_ids.txt tmp/old_ids.txt > tmp/diff_ids.txt
-
-          if [[ -s tmp/diff_ids.txt ]]; then
-            echo "✅ New CVEs detected"
+          if [[ -s tmp/diff.txt ]]; then
             echo "alert=true" >> $GITHUB_OUTPUT
           else
-            echo "ℹ️ No new CVEs"
             echo "alert=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Format and send Teams alert
+      - name: Send Teams alert
         if: steps.diff.outputs.alert == 'true'
         run: |
           MESSAGE="🚨 <b>New CVEs detected!</b><br><br>"
 
-          for id in $(cat tmp/diff_ids.txt); do
-            entry=$(jq -r --arg id "$id" '.results[] | select(.id == $id)' output/results.json)
+          for id in $(cat tmp/diff.txt); do
+            entry=$(jq -r --arg id "$id" '.results[] | select(.id==$id)' output/results.json)
             title=$(echo "$entry" | jq -r '.title // .description')
-            severity=$(echo "$entry" | jq -r '.severity // "UNKNOWN"')
+            severity=$(echo "$entry" | jq -r '.severity')
             ref=$(echo "$entry" | jq -r '.reference // empty')
-            [[ "$ref" == "empty" ]] && ref="https://nvd.nist.gov/vuln/detail/$id"
+            [ "$ref" = "empty" ] && ref="https://nvd.nist.gov/vuln/detail/$id"
             MESSAGE+="<b>$id</b> ($severity)<br>$title<br><a href=\"$ref\">$ref</a><br><br>"
           done
 
           MESSAGE+="👉 <a href='https://caseytwk.github.io/CVE_Automation/'>View full dashboard</a>"
 
-          # Escape message for JSON
           TEXT=$(echo "$MESSAGE" | jq -Rs .)
-
           curl -H "Content-Type: application/json" \
                -d "{\"text\": $TEXT}" \
                ${{ secrets.TEAMS_WEBHOOK_URL }}
