@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-06-27T03:47:44.435076+00:00",
+  "timestamp": "2025-06-27T03:50:31.833242+00:00",
   "results": [
     {
       "sdk": "Ameba SDK",
@@ -66,6 +66,17 @@
       "cwe": "NVD-CWE-noinfo",
       "published": "2022-09-27T23:15:13.977",
       "reference": "https://www.amebaiot.com/en/security_bulletin/cve-2022-34326/"
+    },
+    {
+      "sdk": "RTL8762EKF",
+      "id": "CVE-2025-44531",
+      "title": "",
+      "description": "An issue in Realtek RTL8762EKF-EVB RTL8762E SDK v1.4.0 allows attackers to cause a Denial of Service (DoS) via sending a crafted before a pairing public key is received during a Bluetooth connection attempt.",
+      "severity": "HIGH",
+      "cvss": 7.5,
+      "cwe": "CWE-400",
+      "published": "2025-06-24T16:15:27.703",
+      "reference": "http://realtek.com"
     }
   ]
 }
