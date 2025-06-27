@@ -1,4 +1,4 @@
-name: CVE Alert via Teams
+name: CVE Alert
 
 on:
   push:
@@ -6,36 +6,24 @@ on:
       - 'output/results.json'
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   alert:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Checkout repo
+        uses: actions/checkout@v3
         with:
-          python-version: '3.x'
+          fetch-depth: 2  # ⬅️ Needed to compare current and previous commit
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Ensure jq is available
+        run: sudo apt-get install -y jq
 
-      - name: Get previous results.json from main
+      - name: Extract previous results.json
         run: |
-          mkdir old
-          cd old
-          git init
-          git remote add origin https://github.com/${{ github.repository }}
-          git fetch origin main
-          git checkout origin/main
-          cp output/results.json ../old_results.json || echo '{"results":[]}' > ../old_results.json
-          cd ..
+          git show HEAD^:output/results.json > old_results.json || echo '{"results":[]}' > old_results.json
 
-
-      - name: Compare with new results
+      - name: Compare CVEs
         id: compare
         run: |
           NEW_IDS=$(jq -r '.results[].id' output/results.json)
@@ -54,15 +42,6 @@ jobs:
             echo "trigger_alert=true" >> $GITHUB_OUTPUT
           else
             echo "trigger_alert=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Debug output
-        run: |
-          echo "Old IDs:"
-          cat old_results.json | jq '.results[].id'
-          echo "New IDs:"
-          cat output/results.json | jq '.results[].id'
-          echo "Trigger: ${{ steps.compare.outputs.trigger_alert }}"
 
       - name: Format and send Teams alert
         if: steps.compare.outputs.trigger_alert == 'true'
