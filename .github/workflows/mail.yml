@@ -44,6 +44,15 @@ jobs:
             echo "trigger_alert=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Debug output
+        run: |
+          echo "Old IDs:"
+          cat old_results.json | jq '.results[].id'
+          echo "New IDs:"
+          cat output/results.json | jq '.results[].id'
+          echo "Trigger: ${{ steps.compare.outputs.trigger_alert }}"
+
+
       - name: Format and send Teams alert
         if: steps.compare.outputs.trigger_alert == 'true'
         run: |
