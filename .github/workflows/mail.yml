@@ -1,11 +1,10 @@
 name: CVE Alert
 
 on:
-  push:
-    paths:
-      - 'output/**'
-    branches:
-      - main
+  workflow_run:
+    workflows: ["CVE Monitor"]
+    types:
+      - completed
 
 jobs:
   alert:
