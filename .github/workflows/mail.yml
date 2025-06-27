@@ -42,6 +42,7 @@ jobs:
             echo "trigger_alert=true" >> $GITHUB_OUTPUT
           else
             echo "trigger_alert=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Format and send Teams alert
         if: steps.compare.outputs.trigger_alert == 'true'
