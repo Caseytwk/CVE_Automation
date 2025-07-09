@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-08T17:09:33.982836+00:00",
+  "timestamp": "2025-07-09T17:11:11.705616+00:00",
   "results": [
     {
       "sdk": "Ameba SDK",
@@ -66,6 +66,17 @@
       "cwe": "NVD-CWE-noinfo",
       "published": "2022-09-27T23:15:13.977",
       "reference": "https://www.amebaiot.com/en/security_bulletin/cve-2022-34326/"
+    },
+    {
+      "sdk": "Ameba SDK",
+      "id": "CVE-2025-49604",
+      "title": "",
+      "description": "For Realtek AmebaD devices, a heap-based buffer overflow was discovered in Ameba-AIoT ameba-arduino-d before version 3.1.9 and ameba-rtos-d before commit c2bfd8216a1cbc19ad2ab5f48f372ecea756d67a on 2025/07/03. In the WLAN driver defragment function, lack of validation of the size of fragmented Wi-Fi frames may lead to a heap-based buffer overflow.",
+      "severity": "UNKNOWN",
+      "cvss": "N/A",
+      "cwe": "N/A",
+      "published": "2025-07-09T16:15:24.137",
+      "reference": "https://github.com/Ameba-AIoT/ameba-arduino-d/pull/281"
     }
   ]
 }
