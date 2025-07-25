@@ -4,8 +4,15 @@ from datetime import datetime, timezone
 
 # --- CONFIG ---
 KEYWORDS = [
-    {"sdk": "RTL8720CM", "search": "RTL8720CM"},
-    {"sdk": "Ameba SDK", "search": "Ameba"},
+    #{"sdk": "RTL8720CM", "search": "RTL8720CM"},
+    #{"sdk": "Ameba SDK", "search": "Ameba"},
+    #{"sdk": "RTL8762EKF", "search": "RTL8762EKF"},
+    {"sdk": "CVE-2022-34326", "search": "CVE-2022-34326"},
+    {"sdk": "CVE-2022-29859", "search": "CVE-2022-29859"},
+    {"sdk": "CVE-2020-27301", "search": "CVE-2020-27301"},
+    {"sdk": "CVE-2020-27302", "search": "CVE-2020-27302"},
+    {"sdk": "CVE-2014-6820", "search": "CVE-2014-6820"},
+    {"sdk": "CVE-2014-3902", "search": "CVE-2014-3902"},
 ]
 
 headers = {"User-Agent": "cve-monitor/1.0"}
