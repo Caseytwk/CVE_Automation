@@ -7,6 +7,9 @@ KEYWORDS = [
     {"sdk": "RTL8720CM", "search": "RTL8720CM"},
     {"sdk": "Ameba SDK", "search": "Ameba"},
     {"sdk": "FreeRTOS", "search": "FreeRTOS"},
+
+    # Add SBOM 
+    
 ]
 
 headers = {"User-Agent": "cve-monitor/1.0"}
