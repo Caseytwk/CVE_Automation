@@ -120,6 +120,8 @@ def search_osv(keyword, version):
     try:
         r = requests.post("https://api.osv.dev/v1/query", json=payload)
         data = r.json()
+        if not data.get("vulns"):
+            print(f"[OSV] No CVEs found for {keyword} {version}")
         results = []
         for vuln in data.get("vulns", []):
             results.append({
@@ -135,7 +137,7 @@ def search_osv(keyword, version):
     except Exception as e:
         print(f"[OSV ERROR] {e}")
         return []
-
+        
 # --- Vulners Lookup ---
 def search_vulners(keyword):
     if not VULNERS_API_KEY:
@@ -149,6 +151,9 @@ def search_vulners(keyword):
         data = r.json()
         results = []
         for doc in data.get("data", {}).get("search", []):
+            if not doc.get("id") or not doc.get("type"):
+                continue  # Skip incomplete or malformed entries
+        
             results.append({
                 "source": "Vulners",
                 "id": doc.get("id"),
@@ -158,6 +163,7 @@ def search_vulners(keyword):
                 "published": doc.get("published", "N/A"),
                 "reference": f"https://vulners.com/{doc.get('type')}/{doc.get('id')}"
             })
+
         return results
     except Exception as e:
         print(f"[VULNERS ERROR] {e}")
