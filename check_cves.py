@@ -15,14 +15,13 @@ KEYWORDS = [
     {"sdk": "mbed TLS 2.16.4", "search": "mbedtls", "version": "2.16.4"},
     {"sdk": "Newlib 2.5.0", "search": "Newlib", "version": "2.5.0"},
     {"sdk": "wpa_supplicant 2.2", "search": "wpa_supplicant", "version": "2.2"},
-    {"sdk": "IEEE 802.1X, WPA, WPA2, RSN, IEEE 802.11i", "search": "IEEE 802.1X, WPA, WPA2, RSN, IEEE 802.11i"},
+    {"sdk": "IEEE 802.1X, WPA, WPA2, RSN, IEEE 802.11i", "search": "IEEE 802.1X"},
 ]
 
-VULNERS_API_KEY = "AHUJLKYXPT47G6BJ3YHAJUML81D3142WKQTOLQ52LQ14JSF2MC0GQL5BGKVGRLEX"
+VULNERS_API_KEY = os.getenv("VULNERS_API_KEY")
 headers = {"User-Agent": "cve-monitor/1.0"}
 results = []
 
-# --- Helpers ---
 def is_version_vulnerable(cpe_config, target_version):
     if not target_version:
         return True
@@ -31,7 +30,6 @@ def is_version_vulnerable(cpe_config, target_version):
     except:
         return False
 
-    # Fix: If cpe_config is a list, use first element (or loop if needed)
     if isinstance(cpe_config, list):
         configs = cpe_config
     elif isinstance(cpe_config, dict):
@@ -62,8 +60,6 @@ def is_version_vulnerable(cpe_config, target_version):
                     continue
     return False
 
-
-# --- NVD Lookup ---
 def search_nvd(keyword, target_version):
     index = 0
     nvd_results = []
@@ -112,11 +108,13 @@ def search_nvd(keyword, target_version):
 
     return nvd_results
 
-# --- OSV Lookup ---
 def search_osv(keyword, version):
     if not version:
         return []
-    payload = {"package": {"name": keyword.lower()}, "version": version}
+    payload = {
+        "package": {"name": keyword.lower()},
+        "version": version
+    }
     try:
         r = requests.post("https://api.osv.dev/v1/query", json=payload)
         data = r.json()
@@ -137,8 +135,7 @@ def search_osv(keyword, version):
     except Exception as e:
         print(f"[OSV ERROR] {e}")
         return []
-        
-# --- Vulners Lookup ---
+
 def search_vulners(keyword):
     if not VULNERS_API_KEY:
         return []
@@ -152,8 +149,7 @@ def search_vulners(keyword):
         results = []
         for doc in data.get("data", {}).get("search", []):
             if not doc.get("id") or not doc.get("type"):
-                continue  # Skip incomplete or malformed entries
-        
+                continue
             results.append({
                 "source": "Vulners",
                 "id": doc.get("id"),
@@ -163,18 +159,17 @@ def search_vulners(keyword):
                 "published": doc.get("published", "N/A"),
                 "reference": f"https://vulners.com/{doc.get('type')}/{doc.get('id')}"
             })
-
         return results
     except Exception as e:
         print(f"[VULNERS ERROR] {e}")
         return []
 
-# --- Main Search Loop ---
 for item in KEYWORDS:
     sdk = item["sdk"]
     keyword = item["search"]
     version_str = item.get("version")
 
+    print(f"\n[INFO] Searching CVEs for {sdk} using keyword '{keyword}' and version '{version_str}'")
     r1 = search_nvd(keyword, version_str)
     r2 = search_osv(keyword, version_str) if not r1 else []
     r3 = search_vulners(keyword) if not (r1 or r2) else []
@@ -183,7 +178,6 @@ for item in KEYWORDS:
         result["sdk"] = sdk
         results.append(result)
 
-# --- Output ---
 output = {
     "timestamp": datetime.now(timezone.utc).isoformat(),
     "results": results
