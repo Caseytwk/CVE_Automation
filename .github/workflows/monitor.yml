@@ -16,6 +16,8 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Install packaging module
+        run: pip install packaging
       - run: pip install requests jq
       - run: python check_cves.py
 
