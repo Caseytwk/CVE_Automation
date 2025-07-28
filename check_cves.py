@@ -100,6 +100,10 @@ def search_nvd(keyword, target_version):
             weaknesses = cve.get("weaknesses", [])
             cwes = weaknesses[0]["description"][0]["value"] if weaknesses else "N/A"
 
+            # Skip if it's clearly Android-specific but not relevant to target SDK
+            if "android" in description.lower() and "android" not in sdk.lower():
+                continue
+
             nvd_results.append({
                 "source": "NVD",
                 "id": cve["id"],
