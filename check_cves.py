@@ -100,9 +100,12 @@ def search_nvd(keyword, target_version):
             weaknesses = cve.get("weaknesses", [])
             cwes = weaknesses[0]["description"][0]["value"] if weaknesses else "N/A"
 
-            # Skip if it's clearly Android-specific but not relevant to target SDK
-            if "android" in description.lower() and "android" not in sdk.lower():
-                continue
+            # Skip if wpa_supplicant version is not 2.x but SDK is wpa_supplicant 2.2
+            if "wpa_supplicant" in keyword.lower() and "2.2" in sdk:
+                found_versions = re.findall(r"wpa_supplicant(?:[_\\s]?v?)(\\d+\\.\\d+(?:\\.\\d+)?)", description.lower())
+                if found_versions and all(not v.startswith("2") for v in found_versions):
+                    continue
+
 
             nvd_results.append({
                 "source": "NVD",
