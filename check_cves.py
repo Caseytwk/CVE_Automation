@@ -102,9 +102,13 @@ def search_nvd(keyword, target_version):
 
             # Skip if wpa_supplicant version is not 2.x but SDK is wpa_supplicant 2.2
             if "wpa_supplicant" in keyword.lower() and "2.2" in sdk:
-                found_versions = re.findall(r"wpa_supplicant(?:[_\\s]?v?)(\\d+\\.\\d+(?:\\.\\d+)?)", description.lower())
-                if found_versions and all(not v.startswith("2") for v in found_versions):
-                    continue
+                found_versions = re.findall(r"wpa_supplicant[_ ]?([0-9]+(?:\.[0-9]+)*)", description.lower())
+                if found_versions:
+                    if all(not v.startswith("2") for v in found_versions):
+                        continue
+                # elif "wpa_supplicant_8" in description.lower():  # fallback catch for _8 format
+                #     continue
+
 
 
             nvd_results.append({
