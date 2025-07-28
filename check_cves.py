@@ -31,28 +31,37 @@ def is_version_vulnerable(cpe_config, target_version):
     except:
         return False
 
-    for node in cpe_config.get("nodes", []):
-        for cpe in node.get("cpeMatch", []):
-            vs = cpe.get("versionStartIncluding") or cpe.get("versionStartExcluding")
-            ve = cpe.get("versionEndExcluding") or cpe.get("versionEndIncluding")
+    # Fix: If cpe_config is a list, use first element (or loop if needed)
+    if isinstance(cpe_config, list):
+        configs = cpe_config
+    elif isinstance(cpe_config, dict):
+        configs = [cpe_config]
+    else:
+        return False
 
-            try:
-                if vs:
-                    start = version.parse(vs)
-                    if cpe.get("versionStartExcluding") and not (start < target_v):
-                        continue
-                    elif not (start <= target_v):
-                        continue
-                if ve:
-                    end = version.parse(ve)
-                    if cpe.get("versionEndExcluding") and not (target_v < end):
-                        continue
-                    elif not (target_v <= end):
-                        continue
-                return True
-            except:
-                continue
+    for config in configs:
+        for node in config.get("nodes", []):
+            for cpe in node.get("cpeMatch", []):
+                vs = cpe.get("versionStartIncluding") or cpe.get("versionStartExcluding")
+                ve = cpe.get("versionEndExcluding") or cpe.get("versionEndIncluding")
+                try:
+                    if vs:
+                        start = version.parse(vs)
+                        if cpe.get("versionStartExcluding") and not (start < target_v):
+                            continue
+                        elif not (start <= target_v):
+                            continue
+                    if ve:
+                        end = version.parse(ve)
+                        if cpe.get("versionEndExcluding") and not (target_v < end):
+                            continue
+                        elif not (target_v <= end):
+                            continue
+                    return True
+                except:
+                    continue
     return False
+
 
 # --- NVD Lookup ---
 def search_nvd(keyword, target_version):
