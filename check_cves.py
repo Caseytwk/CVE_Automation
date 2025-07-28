@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timezone
 from packaging import version
 import os
+import re
 
 # --- CONFIG ---
 KEYWORDS = [
@@ -80,6 +81,15 @@ def search_nvd(keyword, target_version):
             if not is_version_vulnerable(configs, target_version):
                 continue
 
+            title = cve.get("titles", [{}])[0].get("title", "")
+            description = cve.get("descriptions", [{}])[0].get("value", "N/A")
+
+            # Extra filter to skip unrelated versions explicitly mentioned
+            if target_version and target_version not in description and target_version not in title:
+                found_versions = re.findall(r"v?(\d+\.\d+(?:\.\d+)?)", description)
+                if found_versions and all(v != target_version for v in found_versions):
+                    continue
+
             refs = cve.get("references", [])
             metrics = cve.get("metrics", {})
             cvss_data = (
@@ -93,8 +103,8 @@ def search_nvd(keyword, target_version):
             nvd_results.append({
                 "source": "NVD",
                 "id": cve["id"],
-                "title": cve.get("titles", [{}])[0].get("title", ""),
-                "description": cve.get("descriptions", [{}])[0].get("value", "N/A"),
+                "title": title,
+                "description": description,
                 "severity": cvss_data.get("baseSeverity", "UNKNOWN"),
                 "cvss": cvss_data.get("baseScore", "N/A"),
                 "cwe": cwes,
