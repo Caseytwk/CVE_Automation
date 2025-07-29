@@ -1,18 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>CVE Dashboard</title>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    table { width: 100%; }
-    h1 { margin-bottom: 20px; }
-    td { vertical-align: top; }
-  </style>
-</head>
 <body>
   <h1>CVE Dashboard</h1>
+
+  <div id="sdkFilters" style="margin-bottom: 20px;"></div>
+
   <table id="cveTable" class="display">
     <thead>
       <tr>
@@ -32,12 +22,17 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
   <script>
+    let dataTable;
+
     fetch('results.json')
       .then(res => res.json())
       .then(data => {
         const tableBody = document.querySelector('#cveTable tbody');
+        const sdkSet = new Set();
+
         data.results.forEach(item => {
           const description = item.title || item.description;
+          sdkSet.add(item.sdk);
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${item.sdk}</td>
@@ -51,11 +46,27 @@
           `;
           tableBody.appendChild(row);
         });
-        $('#cveTable').DataTable({
+
+        // Render SDK filter buttons
+        const filterContainer = document.getElementById("sdkFilters");
+        const allButton = document.createElement("button");
+        allButton.textContent = "Show All";
+        allButton.onclick = () => dataTable.column(0).search("").draw();
+        filterContainer.appendChild(allButton);
+
+        sdkSet.forEach(sdk => {
+          const btn = document.createElement("button");
+          btn.textContent = sdk;
+          btn.style.marginLeft = "10px";
+          btn.onclick = () => dataTable.column(0).search(sdk, true, false).draw();
+          filterContainer.appendChild(btn);
+        });
+
+        // Initialize DataTable
+        dataTable = $('#cveTable').DataTable({
           pageLength: 25,
           order: [[5, 'desc']]
         });
       });
   </script>
 </body>
-</html>
