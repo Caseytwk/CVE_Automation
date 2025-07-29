@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cve-report
-          path: output/cve_report.pdf
+          path: output/cve-report.pdf
 
       - name: Commit PDF with PAT
         env:
