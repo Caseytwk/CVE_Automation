@@ -14,6 +14,7 @@ with open("output/results.json") as f:
 for entry in data["results"]:
     if entry["id"] in new_ids:
         entry["is_new"] = True
+        marked += 1
         print(f"✅ Marked {entry['id']} as new")
 
 print(f"🔍 Total new CVEs marked: {marked}")
