@@ -25,7 +25,7 @@ if os.path.exists(NEW_IDS_PATH):
     with open(NEW_IDS_PATH, "r") as f:
         new_ids = set(line.strip() for line in f)
 
-# ReportLab styles
+# Styles
 styles = getSampleStyleSheet()
 wrap_style = ParagraphStyle(
     name='Wrap',
@@ -34,6 +34,7 @@ wrap_style = ParagraphStyle(
     alignment=TA_LEFT,
 )
 
+# Helpers
 def format_row(entry):
     return [
         Paragraph(entry.get("sdk", "N/A"), wrap_style),
@@ -46,39 +47,47 @@ def format_row(entry):
         Paragraph(entry.get("reference", "N/A"), wrap_style),
     ]
 
-# Separate new vs existing
-new_cves = []
-existing_cves = []
-for entry in data["results"]:
+def classify_entry(entry):
     row = format_row(entry)
     severity = entry.get("severity", "").upper()
-    style = []
-    if severity in {"HIGH", "CRITICAL"}:
-        style = [('BACKGROUND', (0, 0), (-1, 0), colors.red), ('TEXTCOLOR', (0, 0), (-1, 0), colors.white)]
-    if entry["id"] in new_ids:
-        new_cves.append((row, style))
-    else:
-        existing_cves.append((row, style))
+    highlight = severity in {"HIGH", "CRITICAL"}
+    return row, highlight
 
-# Build PDF
+# Split entries
+new_cves = []
+existing_cves = []
+
+for entry in data["results"]:
+    formatted = classify_entry(entry)
+    if entry["id"] in new_ids:
+        new_cves.append(formatted)
+    else:
+        existing_cves.append(formatted)
+
+# PDF story
 story = []
 
-def add_table(title, entries):
-    if not entries:
-        return
+def add_table(title, entries, show_empty_note=False):
     story.append(Paragraph(f"<b>{title}</b>", styles["Heading2"]))
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
+
+    if not entries and show_empty_note:
+        story.append(Paragraph("No new CVEs detected.", styles["Normal"]))
+        story.append(Spacer(1, 20))
+        return
 
     header = [
         Paragraph(h, wrap_style) for h in
         ["SDK", "CVE ID", "Severity", "CVSS", "CWE", "Published", "Description", "Reference"]
     ]
-    data = [header] + [e[0] for e in entries]
+    data = [header] + [entry[0] for entry in entries]
 
-    col_widths = [60, 70, 45, 35, 60, 55, 180, 160]
+    # Adjust column widths for A4 fit (~540 pts width total)
+    col_widths = [60, 65, 45, 35, 60, 50, 165, 160]
+
     table = Table(data, colWidths=col_widths, repeatRows=1)
 
-    base_style = [
+    style = [
         ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
         ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
         ('BACKGROUND', (0, 0), (-1, 0), colors.darkgrey),
@@ -87,20 +96,28 @@ def add_table(title, entries):
         ('FONTSIZE', (0, 0), (-1, -1), 7),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]
-    # Apply row highlighting
-    for idx, (_, row_style) in enumerate(entries, start=1):  # +1 for header row
-        if row_style:
-            base_style.extend([
-                ('BACKGROUND', (0, idx), (-1, idx), colors.whitesmoke),
-                ('TEXTCOLOR', (0, idx), (-1, idx), colors.red),
-            ])
-    table.setStyle(TableStyle(base_style))
+
+    # Highlight high/critical rows
+    for idx, (_, highlight) in enumerate(entries, start=1):  # +1 for header
+        if highlight:
+            style.append(('TEXTCOLOR', (0, idx), (-1, idx), colors.red))
+
+    table.setStyle(TableStyle(style))
     story.append(table)
     story.append(Spacer(1, 20))
 
-doc = SimpleDocTemplate(OUTPUT_PDF, pagesize=A4, leftMargin=10, rightMargin=10, topMargin=20, bottomMargin=20)
-add_table("🚨 New CVEs", new_cves)
+
+# Build full PDF
+doc = SimpleDocTemplate(
+    OUTPUT_PDF,
+    pagesize=A4,
+    leftMargin=10,
+    rightMargin=10,
+    topMargin=20,
+    bottomMargin=20,
+)
+
+add_table("🚨 New CVEs", new_cves, show_empty_note=True)
 add_table("📋 Existing CVEs", existing_cves)
 doc.build(story)
-
 print(f"✅ PDF report generated at: {OUTPUT_PDF}")
