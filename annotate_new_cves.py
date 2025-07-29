@@ -11,6 +11,7 @@ if os.path.exists(new_ids_path):
 with open("output/results.json") as f:
     data = json.load(f)
 
+marked = 0
 for entry in data["results"]:
     if entry["id"] in new_ids:
         entry["is_new"] = True
