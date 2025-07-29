@@ -84,9 +84,9 @@ def search_nvd(keyword, target_version):
             title = cve.get("titles", [{}])[0].get("title", "")
             description = cve.get("descriptions", [{}])[0].get("value", "N/A")
 
-            if "wpa_supplicant" in keyword.lower() and "2.2" in keyword:
+            if "wpa_supplicant" in keyword.lower() and "2.2" in sdk:
                 found_versions = re.findall(r"wpa_supplicant[_ ]?(\d+(?:\.\d+)+)", description.lower())
-                if found_versions and all(v != "2.2" for v in found_versions):
+                if found_versions and all(not v.startswith("2.2") for v in found_versions):
                     continue
 
             if target_version and target_version not in description and target_version not in title:
@@ -150,13 +150,14 @@ def search_osv(keyword, version):
         print(f"[OSV ERROR] {e}")
         return []
 
-def search_vulners(keyword):
+def search_vulners(keyword, version):
     if not VULNERS_API_KEY:
         return []
+    query = f"{keyword} {version}" if version else keyword
     try:
         r = requests.get(
             "https://vulners.com/api/v3/search/lucene/",
-            params={"query": keyword},
+            params={"query": query},
             headers={"User-Agent": "cve-monitor", "X-Api-Key": VULNERS_API_KEY}
         )
         data = r.json()
@@ -185,8 +186,8 @@ for item in KEYWORDS:
 
     print(f"\n[INFO] Searching CVEs for {sdk} using keyword '{keyword}' and version '{version_str}'")
     r1 = search_nvd(keyword, version_str)
-    r2 = search_osv(keyword, version_str) if not r1 else []
-    r3 = search_vulners(keyword) if not (r1 or r2) else []
+    r2 = search_osv(keyword, version_str)
+    r3 = search_vulners(keyword, version_str)
 
     for result in r1 + r2 + r3:
         result["sdk"] = sdk
