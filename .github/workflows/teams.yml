@@ -22,12 +22,32 @@ jobs:
         run: |
           git show HEAD^:output/results.json > old_results.json || echo '{"results":[]}' > old_results.json
 
+      # - name: Compare CVEs
+      #   id: compare
+      #   run: |
+      #     NEW_IDS=$(jq -r '.results[].id' output/results.json)
+      #     OLD_IDS=$(jq -r '.results[].id' old_results.json)
+
+      #     NEW_CVES=""
+      #     for id in $NEW_IDS; do
+      #       if ! echo "$OLD_IDS" | grep -qx "$id"; then
+      #         echo "Found new CVE: $id"
+      #         NEW_CVES="$NEW_CVES $id"
+      #       fi
+      #     done
+
+      #     if [ -n "$NEW_CVES" ]; then
+      #       echo "$NEW_CVES" > new_ids.txt
+      #       echo "trigger_alert=true" >> $GITHUB_OUTPUT
+      #     else
+      #       echo "trigger_alert=false" >> $GITHUB_OUTPUT
+      #     fi
       - name: Compare CVEs
         id: compare
         run: |
           NEW_IDS=$(jq -r '.results[].id' output/results.json)
           OLD_IDS=$(jq -r '.results[].id' old_results.json)
-
+      
           NEW_CVES=""
           for id in $NEW_IDS; do
             if ! echo "$OLD_IDS" | grep -qx "$id"; then
@@ -35,13 +55,15 @@ jobs:
               NEW_CVES="$NEW_CVES $id"
             fi
           done
-
+      
+          echo "$NEW_CVES" > new_ids.txt
+      
           if [ -n "$NEW_CVES" ]; then
-            echo "$NEW_CVES" > new_ids.txt
             echo "trigger_alert=true" >> $GITHUB_OUTPUT
           else
             echo "trigger_alert=false" >> $GITHUB_OUTPUT
           fi
+
 
       - name: Debug output
         run: |
