@@ -37,7 +37,9 @@ jobs:
             fi
           done
       
-          echo "$NEW_CVES" > output/new_ids.txt
+          for id in $NEW_CVES; do
+            echo "$id" >> new_ids.txt
+          done
       
           if [ -n "$NEW_CVES" ]; then
             echo "trigger_alert=true" >> $GITHUB_OUTPUT
