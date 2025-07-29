@@ -106,10 +106,6 @@ def search_nvd(keyword, target_version):
                 if found_versions:
                     if all(not v.startswith("2") for v in found_versions):
                         continue
-                # elif "wpa_supplicant_8" in description.lower():  # fallback catch for _8 format
-                #     continue
-
-
 
             nvd_results.append({
                 "source": "NVD",
