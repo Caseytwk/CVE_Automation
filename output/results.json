@@ -27,30 +27,6 @@
     },
     {
       "source": "NVD",
-      "id": "CVE-2020-27301",
-      "title": "",
-      "description": "A stack buffer overflow in Realtek RTL8710 (and other Ameba-based devices) can lead to remote code execution via the \"AES_UnWRAP\" function, when an attacker in Wi-Fi range sends a crafted \"Encrypted GTK\" value as part of the WPA2 4-way-handshake.",
-      "severity": "HIGH",
-      "cvss": 8.0,
-      "cwe": "CWE-787",
-      "published": "2021-06-04T13:15:07.750",
-      "reference": "https://www.vdoo.com/blog/realtek-wifi-vulnerabilities-zero-day",
-      "sdk": "Ameba SDK"
-    },
-    {
-      "source": "NVD",
-      "id": "CVE-2020-27302",
-      "title": "",
-      "description": "A stack buffer overflow in Realtek RTL8710 (and other Ameba-based devices) can lead to remote code execution via the \"memcpy\" function, when an attacker in Wi-Fi range sends a crafted \"Encrypted GTK\" value as part of the WPA2 4-way-handshake.",
-      "severity": "HIGH",
-      "cvss": 8.0,
-      "cwe": "CWE-787",
-      "published": "2021-06-04T13:15:08.660",
-      "reference": "https://www.vdoo.com/blog/realtek-wifi-vulnerabilities-zero-day",
-      "sdk": "Ameba SDK"
-    },
-    {
-      "source": "NVD",
       "id": "CVE-2022-29859",
       "title": "",
       "description": "component/common/network/dhcp/dhcps.c in ambiot amb1_sdk (aka SDK for Ameba1) before 2022-03-11 mishandles data structures for DHCP packet data.",
