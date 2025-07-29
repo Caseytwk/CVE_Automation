@@ -10,7 +10,7 @@ from reportlab.lib.enums import TA_LEFT
 
 INPUT_JSON = "output/results.json"
 OUTPUT_PDF = "output/cve-report.pdf"
-NEW_IDS_PATH = "new_ids.txt"
+NEW_IDS_PATH = "output/new_ids.txt"
 
 # Ensure output folder exists
 os.makedirs("output", exist_ok=True)
