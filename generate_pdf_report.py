@@ -6,75 +6,70 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
 INPUT_JSON = "output/results.json"
-NEW_IDS_FILE = "new_ids.txt"
-OUTPUT_PDF = "output/cve_report.pdf"
+OUTPUT_PDF = "output/cve-report.pdf"
 
+# Ensure output folder exists
+os.makedirs("output", exist_ok=True)
+
+# Load JSON data
 with open(INPUT_JSON, "r") as f:
     data = json.load(f)
 
+# Mark new CVEs if a file exists
+new_ids_path = "new_ids.txt"
 new_ids = set()
-if os.path.exists(NEW_IDS_FILE):
-    with open(NEW_IDS_FILE) as f:
-        new_ids = set(line.strip() for line in f if line.strip())
+if os.path.exists(new_ids_path):
+    with open(new_ids_path, "r") as f:
+        new_ids = set(line.strip() for line in f)
 
-results = data["results"]
+# Separate into new and existing CVEs
+new_cves = []
+existing_cves = []
+
+for entry in data["results"]:
+    row = [
+        entry.get("sdk", "N/A"),
+        entry.get("id", "N/A"),
+        entry.get("severity", "N/A"),
+        str(entry.get("cvss", "N/A")),
+        entry.get("cwe", "N/A"),
+        entry.get("published", "N/A").split("T")[0],
+        entry.get("description", "")[:100] + "...",  # shorten
+        entry.get("reference", "N/A")
+    ]
+    if entry["id"] in new_ids:
+        new_cves.append(row)
+    else:
+        existing_cves.append(row)
+
+# PDF Styles
 styles = getSampleStyleSheet()
 story = []
 
-def make_table(cves, title):
-    story.append(Paragraph(title, styles["Heading2"]))
-    story.append(Spacer(1, 12))
-
-    table_data = [[
-        "CVE ID", "SDK", "Severity", "CVSS", "CWE", "Description", "Reference"
-    ]]
-    
-    for entry in cves:
-        row = [
-            Paragraph(entry.get("id", ""), styles["Normal"]),
-            Paragraph(entry.get("sdk", ""), styles["Normal"]),
-            Paragraph(entry.get("severity", ""), styles["Normal"]),
-            Paragraph(str(entry.get("cvss", "")), styles["Normal"]),
-            Paragraph(entry.get("cwe", ""), styles["Normal"]),
-            Paragraph(entry.get("description", ""), styles["Normal"]),
-            Paragraph(f'<a href="{entry.get("reference", "")}">{entry.get("reference", "")}</a>', styles["Normal"])
-        ]
-        table_data.append(row)
-
-    t = Table(table_data, repeatRows=1, colWidths=[
-        65,   # CVE ID
-        75,   # SDK
-        55,   # Severity
-        35,   # CVSS
-        55,   # CWE
-        200,  # Description
-        130   # Reference
-    ])
-    
-    t.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#4F81BD")),
+def add_table(title, rows):
+    if not rows:
+        return
+    story.append(Paragraph(f"<b>{title}</b>", styles["Heading2"]))
+    story.append(Spacer(1, 10))
+    table_data = [["SDK", "CVE ID", "Severity", "CVSS", "CWE", "Published", "Description", "Reference"]] + rows
+    col_widths = [80, 70, 50, 40, 60, 60, 200, 160]
+    table = Table(table_data, colWidths=col_widths, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 9),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
+        ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+        ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('FONTSIZE', (0, 1), (-1, -1), 7),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
-        ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
     ]))
-    
-    story.append(t)
-    story.append(Spacer(1, 24))
+    story.append(table)
+    story.append(Spacer(1, 20))
 
+# Build PDF
+add_table("🚨 New CVEs", new_cves)
+add_table("📋 Existing CVEs", existing_cves)
 
-new_cves = [entry for entry in results if entry["id"] in new_ids]
-existing_cves = [entry for entry in results if entry["id"] not in new_ids]
-
-doc = SimpleDocTemplate(OUTPUT_PDF, pagesize=A4)
-if new_cves:
-    make_table(new_cves, "🔔 New CVEs Detected")
-if existing_cves:
-    make_table(existing_cves, "Existing CVEs")
-
+doc = SimpleDocTemplate(OUTPUT_PDF, pagesize=A4, rightMargin=10, leftMargin=10, topMargin=20, bottomMargin=20)
 doc.build(story)
-print(f"PDF report generated: {OUTPUT_PDF}")
+print(f"✅ PDF report generated: {OUTPUT_PDF}")
