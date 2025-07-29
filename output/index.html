@@ -64,7 +64,7 @@
   <script>
     let dataTable;
 
-    fetch('output/results.json')
+    fetch('results.json')
       .then(res => res.json())
       .then(data => {
         const tableBody = document.querySelector('#cveTable tbody');
