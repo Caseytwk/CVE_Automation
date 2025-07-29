@@ -53,11 +53,11 @@ jobs:
         run: |
           python generate_pdf_report.py
   
-      # - name: Upload Report
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: cve-report
-      #     path: output/cve_report.pdf
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cve-report
+          path: output/cve_report.pdf
 
       - name: Commit PDF with PAT
         env:
@@ -69,7 +69,6 @@ jobs:
           git add output/cve-report.pdf
           git commit -m "Update CVE PDF report [skip ci]" || echo "No changes to commit"
           git push
-
 
       - name: Debug output
         run: |
@@ -85,20 +84,23 @@ jobs:
           MESSAGE="🚨 *New CVEs detected!*<br><br>"
           for id in $(cat new_ids.txt); do
             entry=$(jq -r --arg id "$id" '.results[] | select(.id==$id)' output/results.json)
-            sdk=$(echo "$entry" | jq -r '.sdk')
-            desc=$(echo "$entry" | jq -r '.description')
-            cvss=$(echo "$entry" | jq -r '.cvss')
-            cwe=$(echo "$entry" | jq -r '.cwe')
+            title=$(echo "$entry" | jq -r '.title // .description')
+            severity=$(echo "$entry" | jq -r '.severity')
+            cwe=$(echo "$entry" | jq -r '.cwe // "N/A"')
+            sdk=$(echo "$entry" | jq -r '.sdk // "N/A"')
             ref=$(echo "$entry" | jq -r '.reference // empty')
             [ -z "$ref" ] && ref="https://nvd.nist.gov/vuln/detail/$id"
-            MESSAGE+="<b>$id</b><br><i>$sdk</i><br>"
-            MESSAGE+="CVSS: $cvss | CWE: $cwe<br>"
-            MESSAGE+="$desc<br><a href=\"$ref\">$ref</a><br><br>"
+      
+            MESSAGE+="<b>$id</b> ($severity)<br>"
+            MESSAGE+="<b>SDK:</b> $sdk<br>"
+            MESSAGE+="<b>CWE:</b> $cwe<br>"
+            MESSAGE+="$title<br><a href=\"$ref\">$ref</a><br><br>"
           done
       
-          MESSAGE+="📎 <b>PDF Report:</b> Please download from <code>output/cve_report.pdf</code>"
+          MESSAGE+="📝 <a href='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts'>Download PDF Report</a>"
       
           TEXT=$(echo "$MESSAGE" | jq -Rs .)
           curl -H "Content-Type: application/json" \
                -d "{\"text\": $TEXT}" \
                ${{ secrets.TEAMS_WEBHOOK_URL }}
+
