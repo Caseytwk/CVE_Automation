@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-29T05:51:33.870833+00:00",
+  "timestamp": "2025-07-29T06:02:55.843971+00:00",
   "results": [
     {
       "source": "NVD",
@@ -23,6 +23,18 @@
       "cwe": "CWE-310",
       "published": "2014-09-30T10:55:05.503",
       "reference": "http://www.kb.cert.org/vuls/id/580913",
+      "sdk": "Ameba SDK"
+    },
+    {
+      "source": "NVD",
+      "id": "CVE-2020-27301",
+      "title": "",
+      "description": "A stack buffer overflow in Realtek RTL8710 (and other Ameba-based devices) can lead to remote code execution via the \"AES_UnWRAP\" function, when an attacker in Wi-Fi range sends a crafted \"Encrypted GTK\" value as part of the WPA2 4-way-handshake.",
+      "severity": "HIGH",
+      "cvss": 8.0,
+      "cwe": "CWE-787",
+      "published": "2021-06-04T13:15:07.750",
+      "reference": "https://www.vdoo.com/blog/realtek-wifi-vulnerabilities-zero-day",
       "sdk": "Ameba SDK"
     },
     {
@@ -166,6 +178,18 @@
       "cvss": 7.5,
       "cwe": "CWE-125",
       "published": "2019-09-27T19:15:17.217",
+      "reference": "https://source.android.com/security/bulletin/android-10",
+      "sdk": "wpa_supplicant 2.2"
+    },
+    {
+      "source": "NVD",
+      "id": "CVE-2019-9234",
+      "title": "",
+      "description": "In wpa_supplicant_8, there is a possible out of bounds read due to a missing bounds check. This could lead to remote information disclosure with no additional execution privileges needed. User interaction is not needed for exploitation. Product: AndroidVersions: Android-10Android ID: A-122465453",
+      "severity": "HIGH",
+      "cvss": 7.5,
+      "cwe": "CWE-125",
+      "published": "2019-09-27T19:15:17.280",
       "reference": "https://source.android.com/security/bulletin/android-10",
       "sdk": "wpa_supplicant 2.2"
     },
