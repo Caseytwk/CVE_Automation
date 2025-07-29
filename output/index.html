@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>CVE Dashboard</title>
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
   <style>
@@ -9,37 +9,36 @@
       font-family: sans-serif;
       padding: 20px;
     }
-    table.dataTable {
-      border-collapse: collapse;
-      width: 100%;
-      border: 1px solid #ccc;
-    }
-    table.dataTable th, table.dataTable td {
-      border: 1px solid #ccc;
-      padding: 8px;
-    }
     h1 {
       margin-bottom: 20px;
     }
     .sdk-buttons {
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     .sdk-buttons button {
-      margin-right: 8px;
-      margin-bottom: 8px;
-      padding: 6px 10px;
-      border: 1px solid #333;
-      background-color: #f2f2f2;
+      margin: 3px;
+      padding: 6px 12px;
+      background-color: #eee;
+      border: 1px solid #aaa;
       cursor: pointer;
+      border-radius: 4px;
     }
     .sdk-buttons button.active {
       background-color: #007bff;
       color: white;
     }
+    table.dataTable {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    table.dataTable th, table.dataTable td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      vertical-align: top;
+    }
   </style>
 </head>
 <body>
-
   <h1>CVE Dashboard</h1>
 
   <div class="sdk-buttons" id="sdkButtons"></div>
@@ -63,7 +62,8 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
   <script>
-    let table;
+    let dataTable;
+
     fetch('output/results.json')
       .then(res => res.json())
       .then(data => {
@@ -74,7 +74,6 @@
           sdkSet.add(item.sdk);
           const description = item.title || item.description;
           const row = document.createElement('tr');
-          row.setAttribute('data-sdk', item.sdk);
           row.innerHTML = `
             <td>${item.sdk}</td>
             <td><a href="https://nvd.nist.gov/vuln/detail/${item.id}" target="_blank">${item.id}</a></td>
@@ -88,34 +87,33 @@
           tableBody.appendChild(row);
         });
 
-        table = $('#cveTable').DataTable({
+        dataTable = $('#cveTable').DataTable({
           pageLength: 25,
           order: [[5, 'desc']]
         });
 
-        // Create filter buttons
-        const sdkButtonsDiv = document.getElementById("sdkButtons");
-        sdkSet.forEach(sdk => {
-          const btn = document.createElement("button");
-          btn.textContent = sdk;
-          btn.addEventListener("click", () => {
-            // Toggle button active state
-            document.querySelectorAll(".sdk-buttons button").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
+        const sdkButtonsDiv = document.getElementById('sdkButtons');
 
-            table.column(0).search(sdk).draw();
-          });
+        const showAllBtn = document.createElement('button');
+        showAllBtn.textContent = 'Show All';
+        showAllBtn.classList.add('active');
+        showAllBtn.onclick = () => {
+          document.querySelectorAll('.sdk-buttons button').forEach(b => b.classList.remove('active'));
+          showAllBtn.classList.add('active');
+          dataTable.column(0).search('').draw();
+        };
+        sdkButtonsDiv.appendChild(showAllBtn);
+
+        sdkSet.forEach(sdk => {
+          const btn = document.createElement('button');
+          btn.textContent = sdk;
+          btn.onclick = () => {
+            document.querySelectorAll('.sdk-buttons button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            dataTable.column(0).search(sdk).draw();
+          };
           sdkButtonsDiv.appendChild(btn);
         });
-
-        // Optional "Show All" button
-        const showAllBtn = document.createElement("button");
-        showAllBtn.textContent = "Show All";
-        showAllBtn.addEventListener("click", () => {
-          document.querySelectorAll(".sdk-buttons button").forEach(b => b.classList.remove("active"));
-          table.column(0).search("").draw();
-        });
-        sdkButtonsDiv.prepend(showAllBtn);
       });
   </script>
 </body>
