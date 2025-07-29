@@ -1,10 +1,12 @@
 import json
 import os
 
+new_ids_path = "output/new_ids.txt"
+
 new_ids = set()
-if os.path.exists("new_ids.txt"):
-    with open("new_ids.txt") as f:
-        new_ids = set(f.read().split())
+if os.path.exists(new_ids_path):
+    with open(new_ids_path) as f:
+        new_ids = set(line.strip() for line in f if line.strip())
 
 with open("output/results.json") as f:
     data = json.load(f)
