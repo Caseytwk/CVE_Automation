@@ -82,7 +82,7 @@ def add_table(title, entries, show_empty_note=False):
     data = [header] + [entry[0] for entry in entries]
 
     # Adjust column widths for A4 fit (~540 pts width total)
-    col_widths = [60, 65, 45, 35, 60, 50, 165]
+    col_widths = [60, 70, 50, 35, 60, 50, 165]
 
     table = Table(data, colWidths=col_widths, repeatRows=1)
 
