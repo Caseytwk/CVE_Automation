@@ -23,26 +23,6 @@ jobs:
         run: |
           git show HEAD^:output/results.json > old_results.json || echo '{"results":[]}' > old_results.json
 
-      # - name: Compare CVEs
-      #   id: compare
-      #   run: |
-      #     NEW_IDS=$(jq -r '.results[].id' output/results.json)
-      #     OLD_IDS=$(jq -r '.results[].id' old_results.json)
-
-      #     NEW_CVES=""
-      #     for id in $NEW_IDS; do
-      #       if ! echo "$OLD_IDS" | grep -qx "$id"; then
-      #         echo "Found new CVE: $id"
-      #         NEW_CVES="$NEW_CVES $id"
-      #       fi
-      #     done
-
-      #     if [ -n "$NEW_CVES" ]; then
-      #       echo "$NEW_CVES" > new_ids.txt
-      #       echo "trigger_alert=true" >> $GITHUB_OUTPUT
-      #     else
-      #       echo "trigger_alert=false" >> $GITHUB_OUTPUT
-      #     fi
       - name: Compare CVEs
         id: compare
         run: |
@@ -87,22 +67,23 @@ jobs:
           cat output/results.json | jq '.results[].id'
           echo "Trigger: ${{ steps.compare.outputs.trigger_alert }}"
 
-
       - name: Format and send Teams alert
         if: steps.compare.outputs.trigger_alert == 'true'
         run: |
           MESSAGE="🚨 *New CVEs detected!*<br><br>"
           for id in $(cat new_ids.txt); do
             entry=$(jq -r --arg id "$id" '.results[] | select(.id==$id)' output/results.json)
-            title=$(echo "$entry" | jq -r '.title // .description')
-            severity=$(echo "$entry" | jq -r '.severity')
+            sdk=$(echo "$entry" | jq -r '.sdk')
+            desc=$(echo "$entry" | jq -r '.description')
             ref=$(echo "$entry" | jq -r '.reference // empty')
             [ -z "$ref" ] && ref="https://nvd.nist.gov/vuln/detail/$id"
-            MESSAGE+="<b>$id</b> ($severity)<br>$title<br><a href=\"$ref\">$ref</a><br><br>"
+            MESSAGE+="<b>$id</b><br><i>$sdk</i><br>$desc<br><a href=\"$ref\">$ref</a><br><br>"
           done
-          MESSAGE+="👉 <a href='https://caseytwk.github.io/CVE_Automation/'>View full dashboard</a>"
-
+      
+          MESSAGE+="📎 <b>PDF Report:</b> <code>output/cve_report.pdf</code>"
+      
           TEXT=$(echo "$MESSAGE" | jq -Rs .)
           curl -H "Content-Type: application/json" \
                -d "{\"text\": $TEXT}" \
                ${{ secrets.TEAMS_WEBHOOK_URL }}
+
