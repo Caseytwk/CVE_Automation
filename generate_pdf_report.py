@@ -58,7 +58,7 @@ existing_cves = []
 
 for entry in data["results"]:
     formatted = classify_entry(entry)
-    if entry["id"] in new_ids:
+    if entry.get("is_new"):
         new_cves.append(formatted)
     else:
         existing_cves.append(formatted)
