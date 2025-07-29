@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-29T07:25:03.653881+00:00",
+  "timestamp": "2025-07-29T07:29:58.946519+00:00",
   "results": [
     {
       "source": "NVD",
@@ -75,6 +75,18 @@
     },
     {
       "source": "NVD",
+      "id": "CVE-2019-18178",
+      "title": "",
+      "description": "Real Time Engineers FreeRTOS+FAT 160919a has a use after free. The function FF_Close() is defined in ff_file.c. The file handler pxFile is freed by ffconfigFREE, which (by default) is a macro definition of vPortFree(), but it is reused to flush modified file content from the cache to disk by the function FF_FlushCache().",
+      "severity": "HIGH",
+      "cvss": 7.5,
+      "cwe": "CWE-416",
+      "published": "2019-11-04T20:15:10.090",
+      "reference": "https://sourceforge.net/p/freertos/bugs/199/",
+      "sdk": "FreeRTOS v10.2.0"
+    },
+    {
+      "source": "NVD",
       "id": "CVE-2021-43997",
       "title": "",
       "description": "FreeRTOS versions 10.2.0 through 10.4.5 do not prevent non-kernel code from calling the xPortRaisePrivilege internal function to raise privilege. FreeRTOS versions through 10.4.6 do not prevent a third party that has already independently gained the ability to execute injected code to achieve further privilege escalation by branching directly inside a FreeRTOS MPU API wrapper function with a manually crafted stack frame. These issues affect ARMv7-M MPU ports, and ARMv8-M ports with MPU support enabled (i.e. configENABLE_MPU set to 1). These are fixed in V10.5.0 and in V10.4.3-LTS Patch 3.",
@@ -108,6 +120,18 @@
       "published": "2023-11-28T07:15:41.340",
       "reference": "https://dl.acm.org/doi/10.1145/3576915.3623066",
       "sdk": "Bluetooth Core Specification 4.2"
+    },
+    {
+      "source": "NVD",
+      "id": "CVE-2016-4303",
+      "title": "",
+      "description": "The parse_string function in cjson.c in the cJSON library mishandles UTF8/16 strings, which allows remote attackers to cause a denial of service (crash) or execute arbitrary code via a non-hex character in a JSON string, which triggers a heap-based buffer overflow.",
+      "severity": "CRITICAL",
+      "cvss": 9.8,
+      "cwe": "CWE-120",
+      "published": "2016-09-26T14:59:01.553",
+      "reference": "http://blog.talosintel.com/2016/06/esnet-vulnerability.html",
+      "sdk": "cJSON v1.6.0"
     },
     {
       "source": "NVD",
