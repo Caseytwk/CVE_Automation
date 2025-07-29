@@ -37,15 +37,13 @@ jobs:
             fi
           done
       
+          echo "$NEW_CVES" > new_ids.txt
+      
           if [ -n "$NEW_CVES" ]; then
-            for id in $NEW_CVES; do
-              echo "$id"
-            done > output/new_ids.txt
             echo "trigger_alert=true" >> $GITHUB_OUTPUT
           else
             echo "trigger_alert=false" >> $GITHUB_OUTPUT
           fi
-
 
       - name: Annotate new CVEs
         run: |
