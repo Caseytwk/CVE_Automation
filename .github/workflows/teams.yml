@@ -37,7 +37,7 @@ jobs:
             fi
           done
       
-          echo "$NEW_CVES" > new_ids.txt
+          echo "$NEW_CVES" > output/new_ids.txt
       
           if [ -n "$NEW_CVES" ]; then
             echo "trigger_alert=true" >> $GITHUB_OUTPUT
@@ -97,7 +97,7 @@ jobs:
         if: steps.compare.outputs.trigger_alert == 'true'
         run: |
           MESSAGE="🚨 *New CVEs detected!*<br><br>"
-          for id in $(cat new_ids.txt); do
+          for id in $(cat output/new_ids.txt); do
             entry=$(jq -r --arg id "$id" '.results[] | select(.id==$id)' output/results.json)
             sdk=$(echo "$entry" | jq -r '.sdk')
             desc=$(echo "$entry" | jq -r '.description')
