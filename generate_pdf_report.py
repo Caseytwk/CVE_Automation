@@ -18,13 +18,7 @@ os.makedirs("output", exist_ok=True)
 # Load JSON data
 with open(INPUT_JSON, "r") as f:
     data = json.load(f)
-
-# Load new CVE IDs
-new_ids = set()
-if os.path.exists(NEW_IDS_PATH):
-    with open(NEW_IDS_PATH, "r") as f:
-        new_ids = set(line.strip() for line in f)
-
+    
 # Styles
 styles = getSampleStyleSheet()
 wrap_style = ParagraphStyle(
@@ -58,7 +52,7 @@ existing_cves = []
 
 for entry in data["results"]:
     formatted = classify_entry(entry)
-    if entry.get("is_new"):
+    if entry.get("is_new", False):
         new_cves.append(formatted)
     else:
         existing_cves.append(formatted)
