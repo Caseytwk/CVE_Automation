@@ -53,11 +53,23 @@ jobs:
         run: |
           python generate_pdf_report.py
   
-      - name: Upload Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: cve-report
-          path: output/cve_report.pdf
+      # - name: Upload Report
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: cve-report
+      #     path: output/cve_report.pdf
+
+      - name: Commit PDF with PAT
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
+          git add output/cve-report.pdf
+          git commit -m "Update CVE PDF report [skip ci]" || echo "No changes to commit"
+          git push
+
 
       - name: Debug output
         run: |
