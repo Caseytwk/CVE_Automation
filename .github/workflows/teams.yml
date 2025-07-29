@@ -29,13 +29,13 @@ jobs:
           NEW_IDS=$(jq -r '.results[].id' output/results.json)
           OLD_IDS=$(jq -r '.results[].id' old_results.json)
       
-          > new_ids.txt  # clear the file first
+          > output/new_ids.txt  # clear the file
       
           trigger=false
           for id in $NEW_IDS; do
             if ! echo "$OLD_IDS" | grep -qx "$id"; then
               echo "Found new CVE: $id"
-              echo "$id" >> new_ids.txt
+              echo "$id" >> output/new_ids.txt
               trigger=true
             fi
           done
@@ -45,6 +45,7 @@ jobs:
           else
             echo "trigger_alert=false" >> $GITHUB_OUTPUT
           fi
+
 
       - name: Commit new_ids.txt
         run: |
