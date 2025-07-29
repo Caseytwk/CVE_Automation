@@ -64,6 +64,19 @@ jobs:
             echo "trigger_alert=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Annotate new CVEs
+        run: |
+          python annotate_new_cves.py
+  
+      - name: Generate PDF Report
+        run: |
+          python generate_pdf_report.py
+  
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cve-report
+          path: output/cve_report.pdf
 
       - name: Debug output
         run: |
