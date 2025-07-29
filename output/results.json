@@ -135,18 +135,6 @@
     },
     {
       "source": "NVD",
-      "id": "CVE-2020-22283",
-      "title": "",
-      "description": "A buffer overflow vulnerability in the icmp6_send_response_with_addrs_and_netif() function of Free Software Foundation lwIP version git head allows attackers to access sensitive information via a crafted ICMPv6 packet.",
-      "severity": "HIGH",
-      "cvss": 7.5,
-      "cwe": "CWE-120",
-      "published": "2021-07-22T20:15:07.920",
-      "reference": "https://lists.debian.org/debian-lts-announce/2023/11/msg00011.html",
-      "sdk": "IwIP 2.0.2"
-    },
-    {
-      "source": "NVD",
       "id": "CVE-2024-7490",
       "title": "",
       "description": "Improper Input Validation vulnerability in Microchip Techology Advanced Software Framework example DHCP server can cause remote code execution through a buffer overflow.\n This vulnerability is associated with program files tinydhcpserver.C and program routines lwip_dhcp_find_option.\n\nThis issue affects Advanced Software Framework: through 3.52.0.2574.\n\n\nASF is no longer being supported. Apply provided workaround or migrate to an actively maintained framework.",
