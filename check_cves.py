@@ -19,7 +19,7 @@ KEYWORDS = [
     {"sdk": "IEEE 802.1X, WPA, WPA2, RSN, IEEE 802.11i", "search": "IEEE 802.1X"},
 ]
 
-VULNERS_API_KEY = "AHUJLKYXPT47G6BJ3YHAJUML81D3142WKQTOLQ52LQ14JSF2MC0GQL5BGKVGRLEX"
+VULNERS_API_KEY = os.getenv("VULNERS_API_KEY")
 headers = {"User-Agent": "cve-monitor/1.0"}
 results = []
 
@@ -84,14 +84,14 @@ def search_nvd(keyword, target_version):
             title = cve.get("titles", [{}])[0].get("title", "")
             description = cve.get("descriptions", [{}])[0].get("value", "N/A")
 
+            if "wpa_supplicant" in keyword.lower() and "2.2" in keyword:
+                found_versions = re.findall(r"wpa_supplicant[_ ]?(\d+(?:\.\d+)+)", description.lower())
+                if found_versions and all(v != "2.2" for v in found_versions):
+                    continue
+
             if target_version and target_version not in description and target_version not in title:
                 found_versions = re.findall(r"v?(\d+\.\d+(?:\.\d+)?)", description)
                 if found_versions and all(v != target_version for v in found_versions):
-                    continue
-
-            if "wpa_supplicant" in keyword.lower() and "2.2" in sdk:
-                found_versions = re.findall(r"wpa_supplicant[_ ]?(\d+(?:\.\d+)+)", description.lower())
-                if found_versions and all(not v.startswith("2.2") for v in found_versions):
                     continue
 
             refs = cve.get("references", [])
@@ -150,21 +150,20 @@ def search_osv(keyword, version):
         print(f"[OSV ERROR] {e}")
         return []
 
-def search_vulners_versioned(keyword, version):
-    if not VULNERS_API_KEY or not version:
+def search_vulners(keyword):
+    if not VULNERS_API_KEY:
         return []
     try:
-        payload = {
-            "software": [{"software": keyword, "version": version}]
-        }
-        r = requests.post(
-            "https://vulners.com/api/v3/burp/software/",
-            json=payload,
+        r = requests.get(
+            "https://vulners.com/api/v3/search/lucene/",
+            params={"query": keyword},
             headers={"User-Agent": "cve-monitor", "X-Api-Key": VULNERS_API_KEY}
         )
         data = r.json()
         results = []
         for doc in data.get("data", {}).get("search", []):
+            if not doc.get("id") or not doc.get("type"):
+                continue
             results.append({
                 "source": "Vulners",
                 "id": doc.get("id"),
@@ -187,7 +186,7 @@ for item in KEYWORDS:
     print(f"\n[INFO] Searching CVEs for {sdk} using keyword '{keyword}' and version '{version_str}'")
     r1 = search_nvd(keyword, version_str)
     r2 = search_osv(keyword, version_str) if not r1 else []
-    r3 = search_vulners_versioned(keyword, version_str) if not (r1 or r2) else []
+    r3 = search_vulners(keyword) if not (r1 or r2) else []
 
     for result in r1 + r2 + r3:
         result["sdk"] = sdk
