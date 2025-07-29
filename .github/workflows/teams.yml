@@ -75,15 +75,18 @@ jobs:
             entry=$(jq -r --arg id "$id" '.results[] | select(.id==$id)' output/results.json)
             sdk=$(echo "$entry" | jq -r '.sdk')
             desc=$(echo "$entry" | jq -r '.description')
+            cvss=$(echo "$entry" | jq -r '.cvss')
+            cwe=$(echo "$entry" | jq -r '.cwe')
             ref=$(echo "$entry" | jq -r '.reference // empty')
             [ -z "$ref" ] && ref="https://nvd.nist.gov/vuln/detail/$id"
-            MESSAGE+="<b>$id</b><br><i>$sdk</i><br>$desc<br><a href=\"$ref\">$ref</a><br><br>"
+            MESSAGE+="<b>$id</b><br><i>$sdk</i><br>"
+            MESSAGE+="CVSS: $cvss | CWE: $cwe<br>"
+            MESSAGE+="$desc<br><a href=\"$ref\">$ref</a><br><br>"
           done
       
-          MESSAGE+="📎 <b>PDF Report:</b> <code>output/cve_report.pdf</code>"
+          MESSAGE+="📎 <b>PDF Report:</b> Please download from <code>output/cve_report.pdf</code>"
       
           TEXT=$(echo "$MESSAGE" | jq -Rs .)
           curl -H "Content-Type: application/json" \
                -d "{\"text\": $TEXT}" \
                ${{ secrets.TEAMS_WEBHOOK_URL }}
-
