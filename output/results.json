@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-07-29T07:29:58.946519+00:00",
+  "timestamp": "2025-07-29T07:34:17.525802+00:00",
   "results": [
     {
       "source": "NVD",
@@ -75,6 +75,18 @@
     },
     {
       "source": "NVD",
+      "id": "CVE-2019-18178",
+      "title": "",
+      "description": "Real Time Engineers FreeRTOS+FAT 160919a has a use after free. The function FF_Close() is defined in ff_file.c. The file handler pxFile is freed by ffconfigFREE, which (by default) is a macro definition of vPortFree(), but it is reused to flush modified file content from the cache to disk by the function FF_FlushCache().",
+      "severity": "HIGH",
+      "cvss": 7.5,
+      "cwe": "CWE-416",
+      "published": "2019-11-04T20:15:10.090",
+      "reference": "https://sourceforge.net/p/freertos/bugs/199/",
+      "sdk": "FreeRTOS v10.2.0"
+    },
+    {
+      "source": "NVD",
       "id": "CVE-2021-43997",
       "title": "",
       "description": "FreeRTOS versions 10.2.0 through 10.4.5 do not prevent non-kernel code from calling the xPortRaisePrivilege internal function to raise privilege. FreeRTOS versions through 10.4.6 do not prevent a third party that has already independently gained the ability to execute injected code to achieve further privilege escalation by branching directly inside a FreeRTOS MPU API wrapper function with a manually crafted stack frame. These issues affect ARMv7-M MPU ports, and ARMv8-M ports with MPU support enabled (i.e. configENABLE_MPU set to 1). These are fixed in V10.5.0 and in V10.4.3-LTS Patch 3.",
@@ -144,6 +156,18 @@
       "published": "2024-08-08T15:15:19.057",
       "reference": "https://www.microchip.com/en-us/tools-resources/develop/libraries/advanced-software-framework",
       "sdk": "IwIP 2.0.2"
+    },
+    {
+      "source": "NVD",
+      "id": "CVE-2014-3686",
+      "title": "",
+      "description": "wpa_supplicant and hostapd 0.7.2 through 2.2, when running with certain configurations and using wpa_cli or hostapd_cli with action scripts, allows remote attackers to execute arbitrary commands via a crafted frame.",
+      "severity": "UNKNOWN",
+      "cvss": 6.8,
+      "cwe": "CWE-20",
+      "published": "2014-10-16T00:55:05.577",
+      "reference": "http://advisories.mageia.org/MGASA-2014-0429.html",
+      "sdk": "wpa_supplicant 2.2"
     },
     {
       "source": "NVD",
