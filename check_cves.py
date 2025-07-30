@@ -19,8 +19,6 @@ KEYWORDS = [
     {"sdk": "IEEE 802.1X, WPA, WPA2, RSN, IEEE 802.11i", "search": "IEEE 802.1X"},
 ]
 
-#VULNERS_API_KEY = "25OQZVQLAC29EFHADC4568AQHMNV8MSBT6B0B8L34VKF849B6B0KIDBTRHJVPELT"
-VULNERS_API_KEY = ""
 headers = {"User-Agent": "cve-monitor/1.0"}
 results = []
 
@@ -118,85 +116,6 @@ def search_nvd(keyword, target_version):
     except Exception as e:
         print(f"[NVD ERROR] {e}")
     return nvd_results
-
-def search_circl(keyword):
-    try:
-        r = requests.get(f"https://cve.circl.lu/api/search/{keyword}")
-        data = r.json().get('data', [])
-        results = []
-        for item in data:
-            results.append({
-                "source": "CIRCL",
-                "id": item.get("id"),
-                "title": item.get("summary", ""),
-                "description": item.get("summary", ""),
-                "cvss": item.get("cvss", "N/A"),
-                "published": item.get("Published", "N/A"),
-                "reference": item.get("references", ["N/A"])[0]
-            })
-        return results
-    except Exception as e:
-        print(f"[CIRCL ERROR] {e}")
-        return []
-
-def search_vulners(sdk_name, version=None):
-    if not VULNERS_API_KEY:
-        return []
-
-    # Escape Lucene special characters
-    def escape_lucene(text):
-        lucene_specials = r'+-&|!(){}[]^"~*?:\\/'
-        for ch in lucene_specials:
-            text = text.replace(ch, f'\\{ch}')
-        return text
-
-    escaped_sdk = escape_lucene(sdk_name)
-
-    # Build query: search exact or fuzzy match in title/description
-    query = f'(title:"{escaped_sdk}" OR description:"{escaped_sdk}" OR cpe:"{escaped_sdk}")'
-
-    if version:
-        escaped_ver = escape_lucene(version)
-        query += f' AND (title:"{escaped_ver}" OR description:"{escaped_ver}")'
-
-    try:
-        response = requests.get(
-            "https://vulners.com/api/v3/search/lucene/",
-            params={"query": query, "size": 100},
-            headers={
-                "User-Agent": "cve-monitor",
-                "X-Api-Key": VULNERS_API_KEY
-            }
-        )
-        data = response.json()
-        
-        # Manual test
-        test_results = search_vulners("Ameba")
-        for r in test_results:
-            print(f"{r['id']}: {r['title']}")    
-        
-        results = []
-        for doc in data.get("data", {}).get("search", []):
-            # Optional: stricter SDK matching
-            if sdk_name.lower() not in doc.get("title", "").lower() and \
-               sdk_name.lower() not in doc.get("description", "").lower():
-                continue  # skip false matches
-
-            results.append({
-                "source": "Vulners",
-                "id": doc.get("id"),
-                "title": doc.get("title", ""),
-                "description": doc.get("description", "N/A"),
-                "cvss": doc.get("cvss", "N/A"),
-                "published": doc.get("published", "N/A"),
-                "reference": f"https://vulners.com/{doc.get('type')}/{doc.get('id')}"
-            })
-        print(f"[VULNERS] {len(results)} results found for SDK '{sdk_name}'")
-        return results
-    except Exception as e:
-        print(f"[VULNERS ERROR] {e}")
-        return []
-
 
 # Main scanning loop
 for item in KEYWORDS:
