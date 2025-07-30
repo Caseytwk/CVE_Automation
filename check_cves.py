@@ -118,21 +118,43 @@ def search_nvd(keyword, target_version):
         print(f"[NVD ERROR] {e}")
     return nvd_results
 
-def search_vulners(keyword):
+def search_vulners(sdk_name, version=None):
     if not VULNERS_API_KEY:
-        print("Vulners API doesn't work")
         return []
+
+    # Escape Lucene special characters
+    def escape_lucene(text):
+        lucene_specials = r'+-&|!(){}[]^"~*?:\\/'
+        for ch in lucene_specials:
+            text = text.replace(ch, f'\\{ch}')
+        return text
+
+    escaped_sdk = escape_lucene(sdk_name)
+
+    # Build query: search exact or fuzzy match in title/description
+    query = f'(title:"{escaped_sdk}" OR description:"{escaped_sdk}" OR cpe:"{escaped_sdk}")'
+
+    if version:
+        escaped_ver = escape_lucene(version)
+        query += f' AND (title:"{escaped_ver}" OR description:"{escaped_ver}")'
+
     try:
-        r = requests.get(
+        response = requests.get(
             "https://vulners.com/api/v3/search/lucene/",
-            params={"query": keyword},
-            headers={"User-Agent": "cve-monitor", "X-Api-Key": VULNERS_API_KEY}
+            params={"query": query, "size": 100},
+            headers={
+                "User-Agent": "cve-monitor",
+                "X-Api-Key": VULNERS_API_KEY
+            }
         )
-        data = r.json()
+        data = response.json()
         results = []
         for doc in data.get("data", {}).get("search", []):
-            if not doc.get("id") or not doc.get("type"):
-                continue
+            # Optional: stricter SDK matching
+            if sdk_name.lower() not in doc.get("title", "").lower() and \
+               sdk_name.lower() not in doc.get("description", "").lower():
+                continue  # skip false matches
+
             results.append({
                 "source": "Vulners",
                 "id": doc.get("id"),
@@ -142,10 +164,12 @@ def search_vulners(keyword):
                 "published": doc.get("published", "N/A"),
                 "reference": f"https://vulners.com/{doc.get('type')}/{doc.get('id')}"
             })
+        print(f"[VULNERS] {len(results)} results found for SDK '{sdk_name}'")
         return results
     except Exception as e:
         print(f"[VULNERS ERROR] {e}")
         return []
+
 
 # Main scanning loop
 for item in KEYWORDS:
