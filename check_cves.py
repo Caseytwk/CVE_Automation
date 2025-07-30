@@ -31,13 +31,7 @@ def is_version_vulnerable(cpe_config, target_version):
     except:
         return False
 
-    if isinstance(cpe_config, list):
-        configs = cpe_config
-    elif isinstance(cpe_config, dict):
-        configs = [cpe_config]
-    else:
-        return False
-
+    configs = cpe_config if isinstance(cpe_config, list) else [cpe_config]
     for config in configs:
         for node in config.get("nodes", []):
             for cpe in node.get("cpeMatch", []):
@@ -65,99 +59,72 @@ def search_nvd(keyword, target_version):
     index = 0
     nvd_results = []
 
-    while True:
-        params = {
-            "keywordSearch": keyword,
-            "resultsPerPage": 200,
-            "startIndex": index
-        }
-        r = requests.get("https://services.nvd.nist.gov/rest/json/cves/2.0", headers=headers, params=params)
-        data = r.json()
-        vulns = data.get("vulnerabilities", [])
+    try:
+        while True:
+            params = {
+                "keywordSearch": keyword,
+                "resultsPerPage": 200,
+                "startIndex": index
+            }
+            r = requests.get("https://services.nvd.nist.gov/rest/json/cves/2.0", headers=headers, params=params, timeout=10)
+            data = r.json()
+            vulns = data.get("vulnerabilities", [])
 
-        for vuln in vulns:
-            cve = vuln["cve"]
-            configs = cve.get("configurations", {})
-            if not is_version_vulnerable(configs, target_version):
-                continue
-
-            title = cve.get("titles", [{}])[0].get("title", "")
-            description = cve.get("descriptions", [{}])[0].get("value", "N/A")
-
-            if "wpa_supplicant" in keyword.lower() and "2.2" in sdk:
-                found_versions = re.findall(r"wpa_supplicant[_ ]?(\d+(?:\.\d+)+)", description.lower())
-                if found_versions and all(not v.startswith("2.2") for v in found_versions):
+            for vuln in vulns:
+                cve = vuln["cve"]
+                configs = cve.get("configurations", {})
+                if not is_version_vulnerable(configs, target_version):
                     continue
 
-            if target_version and target_version not in description and target_version not in title:
-                found_versions = re.findall(r"v?(\d+\.\d+(?:\.\d+)?)", description)
-                if found_versions and all(v != target_version for v in found_versions):
-                    continue
+                title = cve.get("titles", [{}])[0].get("title", "")
+                description = cve.get("descriptions", [{}])[0].get("value", "N/A")
 
-            refs = cve.get("references", [])
-            metrics = cve.get("metrics", {})
-            cvss_data = (
-                metrics.get("cvssMetricV31", [{}])[0].get("cvssData") or
-                metrics.get("cvssMetricV30", [{}])[0].get("cvssData") or
-                metrics.get("cvssMetricV2", [{}])[0].get("cvssData", {})
-            )
-            weaknesses = cve.get("weaknesses", [])
-            cwes = weaknesses[0]["description"][0]["value"] if weaknesses else "N/A"
+                if "wpa_supplicant" in keyword.lower() and "2.2" in sdk:
+                    found_versions = re.findall(r"wpa_supplicant[_ ]?(\d+(?:\.\d+)+)", description.lower())
+                    if found_versions and all(not v.startswith("2.2") for v in found_versions):
+                        continue
 
-            nvd_results.append({
-                "source": "NVD",
-                "id": cve["id"],
-                "title": title,
-                "description": description,
-                "severity": cvss_data.get("baseSeverity", "UNKNOWN"),
-                "cvss": cvss_data.get("baseScore", "N/A"),
-                "cwe": cwes,
-                "published": cve.get("published", "N/A"),
-                "reference": refs[0]["url"] if refs else "N/A"
-            })
+                if target_version and target_version not in description and target_version not in title:
+                    found_versions = re.findall(r"v?(\d+\.\d+(?:\.\d+)?)", description)
+                    if found_versions and all(v != target_version for v in found_versions):
+                        continue
 
-        index += 200
-        if index >= data.get("totalResults", 0):
-            break
+                refs = cve.get("references", [])
+                metrics = cve.get("metrics", {})
+                cvss_data = (
+                    metrics.get("cvssMetricV31", [{}])[0].get("cvssData") or
+                    metrics.get("cvssMetricV30", [{}])[0].get("cvssData") or
+                    metrics.get("cvssMetricV2", [{}])[0].get("cvssData", {})
+                )
+                weaknesses = cve.get("weaknesses", [])
+                cwes = weaknesses[0]["description"][0]["value"] if weaknesses else "N/A"
 
+                nvd_results.append({
+                    "source": "NVD",
+                    "id": cve["id"],
+                    "title": title,
+                    "description": description,
+                    "severity": cvss_data.get("baseSeverity", "UNKNOWN"),
+                    "cvss": cvss_data.get("baseScore", "N/A"),
+                    "cwe": cwes,
+                    "published": cve.get("published", "N/A"),
+                    "reference": refs[0]["url"] if refs else "https://nvd.nist.gov/vuln/detail/" + cve["id"]
+                })
+
+            index += 200
+            if index >= data.get("totalResults", 0):
+                break
+    except Exception as e:
+        print(f"[NVD ERROR] {e}")
     return nvd_results
 
-def search_osv(keyword, version):
-    if not version:
-        return []
-    payload = {
-        "package": {"name": keyword.lower()},
-        "version": version
-    }
-    try:
-        r = requests.post("https://api.osv.dev/v1/query", json=payload)
-        data = r.json()
-        if not data.get("vulns"):
-            print(f"[OSV] No CVEs found for {keyword} {version}")
-        results = []
-        for vuln in data.get("vulns", []):
-            results.append({
-                "source": "OSV",
-                "id": vuln["id"],
-                "title": vuln.get("summary", ""),
-                "description": vuln.get("details", "N/A"),
-                "cvss": vuln.get("severity", [{}])[0].get("score", "N/A"),
-                "published": vuln.get("published", "N/A"),
-                "reference": vuln.get("references", [{}])[0].get("url", "N/A")
-            })
-        return results
-    except Exception as e:
-        print(f"[OSV ERROR] {e}")
-        return []
-
-def search_vulners(keyword, version):
+def search_vulners(keyword):
     if not VULNERS_API_KEY:
         return []
-    query = f"{keyword} {version}" if version else keyword
     try:
         r = requests.get(
             "https://vulners.com/api/v3/search/lucene/",
-            params={"query": query},
+            params={"query": keyword},
             headers={"User-Agent": "cve-monitor", "X-Api-Key": VULNERS_API_KEY}
         )
         data = r.json()
@@ -179,20 +146,21 @@ def search_vulners(keyword, version):
         print(f"[VULNERS ERROR] {e}")
         return []
 
+# Main scanning loop
 for item in KEYWORDS:
     sdk = item["sdk"]
     keyword = item["search"]
     version_str = item.get("version")
 
-    print(f"\n[INFO] Searching CVEs for {sdk} using keyword '{keyword}' and version '{version_str}'")
-    r1 = search_nvd(keyword, version_str)
-    r2 = search_osv(keyword, version_str)
-    r3 = search_vulners(keyword, version_str)
+    print(f"\n🔍 Searching CVEs for {sdk} using keyword '{keyword}' and version '{version_str}'")
+    nvd_results = search_nvd(keyword, version_str)
+    vulners_results = search_vulners(keyword)
 
-    for result in r1 + r2 + r3:
+    for result in nvd_results + vulners_results:
         result["sdk"] = sdk
         results.append(result)
 
+# Save to output
 output = {
     "timestamp": datetime.now(timezone.utc).isoformat(),
     "results": results
@@ -201,3 +169,5 @@ output = {
 os.makedirs("output", exist_ok=True)
 with open("output/results.json", "w") as f:
     json.dump(output, f, indent=2)
+
+print(f"✅ Scan complete. {len(results)} CVEs saved to output/results.json")
