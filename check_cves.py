@@ -148,6 +148,12 @@ def search_vulners(sdk_name, version=None):
             }
         )
         data = response.json()
+        
+        # Manual test
+        test_results = search_vulners("Ameba")
+        for r in test_results:
+            print(f"{r['id']}: {r['title']}")    
+        
         results = []
         for doc in data.get("data", {}).get("search", []):
             # Optional: stricter SDK matching
