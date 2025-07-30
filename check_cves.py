@@ -19,7 +19,7 @@ KEYWORDS = [
     {"sdk": "IEEE 802.1X, WPA, WPA2, RSN, IEEE 802.11i", "search": "IEEE 802.1X"},
 ]
 
-VULNERS_API_KEY = "25OQZVQLAC29EFHADC4568AQHMNV8MSBT6B0B8L34VKF849B6B0KIDBTRHJVPELT"
+#VULNERS_API_KEY = "25OQZVQLAC29EFHADC4568AQHMNV8MSBT6B0B8L34VKF849B6B0KIDBTRHJVPELT"
 headers = {"User-Agent": "cve-monitor/1.0"}
 results = []
 
@@ -117,6 +117,26 @@ def search_nvd(keyword, target_version):
     except Exception as e:
         print(f"[NVD ERROR] {e}")
     return nvd_results
+
+def search_circl(keyword):
+    try:
+        r = requests.get(f"https://cve.circl.lu/api/search/{keyword}")
+        data = r.json().get('data', [])
+        results = []
+        for item in data:
+            results.append({
+                "source": "CIRCL",
+                "id": item.get("id"),
+                "title": item.get("summary", ""),
+                "description": item.get("summary", ""),
+                "cvss": item.get("cvss", "N/A"),
+                "published": item.get("Published", "N/A"),
+                "reference": item.get("references", ["N/A"])[0]
+            })
+        return results
+    except Exception as e:
+        print(f"[CIRCL ERROR] {e}")
+        return []
 
 def search_vulners(sdk_name, version=None):
     if not VULNERS_API_KEY:
