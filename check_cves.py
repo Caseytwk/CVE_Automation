@@ -120,6 +120,7 @@ def search_nvd(keyword, target_version):
 
 def search_vulners(keyword):
     if not VULNERS_API_KEY:
+        print("Vulners API doesn't work")
         return []
     try:
         r = requests.get(
